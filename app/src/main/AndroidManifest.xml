@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 采集路径预留：M1 不在运行时申请，默认演示走文件回放。 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
         android:name=".platform.SpatialApplication"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -10,13 +13,13 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_launcher_foreground"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SonosphereTheme"
+        android:theme="@style/Theme.SoundArchitecture"
         tools:targetApi="31">
 
         <activity
             android:name=".platform.LaunchActivity"
             android:exported="true"
-            android:theme="@style/Theme.SonosphereTheme">
+            android:theme="@style/Theme.SoundArchitecture">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -24,8 +27,8 @@
 
             <meta-data
                 android:name="pico.spatial.stage.id"
-                android:value="SONOSPHERE" />
-            <!-- 1 = Mixed：Progressive 的 immersion 无法在运行时设置，见提案后续实测结论 -->
+                android:value="SOUNDARCHITECTURE" />
+            <!-- 1 = Mixed：Progressive 的 immersion 无法在运行时设置 -->
             <meta-data
                 android:name="pico.spatial.stage.style"
                 android:value="1" />

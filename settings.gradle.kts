@@ -27,5 +27,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Sonosphere"
+rootProject.name = "SoundArchitecture"
 include(":app")

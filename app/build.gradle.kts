@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.spatialcoach.sonosphere"
+    namespace = "com.spatialcoach.soundarchitecture"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.spatialcoach.sonosphere"
+        applicationId = "com.spatialcoach.soundarchitecture"
         minSdk = 35
         targetSdk = 35
         versionCode = 1

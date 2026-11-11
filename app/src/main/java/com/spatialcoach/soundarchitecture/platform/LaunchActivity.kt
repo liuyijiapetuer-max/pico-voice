@@ -1,4 +1,4 @@
-package com.spatialcoach.sonosphere.platform
+package com.spatialcoach.soundarchitecture.platform
 
 import com.pico.spatial.ui.platform.stub.SpatialLaunchActivity
 

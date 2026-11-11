@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SonosphereTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.SoundArchitecture" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/sonosphere_dark</item>
         <item name="android:statusBarColor">@color/sonosphere_dark</item>
         <item name="android:navigationBarColor">@color/sonosphere_dark</item>

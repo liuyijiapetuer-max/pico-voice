@@ -1,9 +1,9 @@
-package com.spatialcoach.sonosphere
+package com.spatialcoach.soundarchitecture
 
 import com.pico.spatial.ui.design.PicoTheme
 import com.pico.spatial.ui.foundation.dsl.DefaultStage
 import com.pico.spatial.ui.foundation.dsl.SpatialAppScope
-import com.spatialcoach.sonosphere.stage.PlaceholderStageContent
+import com.spatialcoach.soundarchitecture.stage.PlaceholderStageContent
 
 fun mainApp(scope: SpatialAppScope) =
     with(scope) {

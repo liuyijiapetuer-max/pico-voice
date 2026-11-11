@@ -1,8 +1,8 @@
-package com.spatialcoach.sonosphere.platform
+package com.spatialcoach.soundarchitecture.platform
 
 import android.app.Application
 import com.pico.spatial.ui.foundation.dsl.launch
-import com.spatialcoach.sonosphere.mainApp
+import com.spatialcoach.soundarchitecture.mainApp
 
 class SpatialApplication : Application() {
     override fun onCreate() {
