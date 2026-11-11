@@ -1,0 +1,80 @@
+<!-- ============================================================ -->
+<!-- CHART INITIALISATION                                           -->
+<!-- ============================================================ -->
+<script>
+Chart.defaults.animation = false;
+Chart.defaults.font.family = '-apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif';
+Chart.defaults.font.size = 10;
+Chart.defaults.color = '#3b3944';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.boxHeight = 12;
+Chart.defaults.plugins.legend.labels.font = { size: 9 };
+Chart.defaults.plugins.tooltip.font = { size: 9 };
+
+var INK = '#16151a', MUTE = '#d8d2c6';
+var C_A = '#a35f00', C_D = '#3e5c76', C_X = '#94919c';
+var ACCENT = '#a35f00';
+
+/* --- 1. 竞争结构雷达 --------------------------------------------------- */
+(function () {
+  var el = document.getElementById('ch-compare');
+  if (!el) { return; }
+  new Chart(el, {
+    type: 'radar',
+    data: {
+      labels: ['独占官方硬指标', '媒介不可替代\n(只有 XR 能做)', '评委可当场参与', '无外部依赖\n(断网可跑)', '真机门槛友好度', '不可抄袭性'],
+      datasets: [
+        { label: '声之建筑 A', data: [95, 92, 88, 98, 90, 90], borderColor: C_A, backgroundColor: 'rgba(163,95,0,0.14)', pointBackgroundColor: C_A, borderWidth: 2, pointRadius: 3 },
+        { label: '曝光暗房 D', data: [55, 85, 90, 92, 60, 92], borderColor: C_D, backgroundColor: 'rgba(62,92,118,0.11)', pointBackgroundColor: C_D, borderWidth: 2, pointRadius: 3 },
+        { label: '竞品典型 (X-in-VR)', data: [25, 35, 25, 15, 85, 25], borderColor: C_X, backgroundColor: 'rgba(148,145,156,0.09)', pointBackgroundColor: C_X, borderWidth: 2, pointRadius: 3 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'rectRounded' } },
+        tooltip: { callbacks: { label: function (c) { return c.dataset.label + '：' + c.parsed.r + ' / 100'; } } }
+      },
+      scales: {
+        r: {
+          beginAtZero: true, max: 100,
+          grid: { color: '#e6e0d5' },
+          angleLines: { color: '#e6e0d5' },
+          pointLabels: { color: INK, font: { size: 9 } },
+          ticks: { stepSize: 25, backdropColor: 'transparent', color: '#94919c', font: { size: 8.5 } }
+        }
+      }
+    }
+  });
+})();
+
+/* --- 2. 六维预估对比 ---------------------------------------------------- */
+(function () {
+  var el = document.getElementById('ch-score');
+  if (!el) { return; }
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: ['创新 (25)', '功能设计 (25)', '界面视觉 (15)', '交互体验 (15)', '完成度 (10)', '路演 (10)'],
+      datasets: [
+        { label: 'A 声之建筑', data: [24, 22, 14, 14, 8, 9], backgroundColor: C_A, borderWidth: 0, borderRadius: 3, barThickness: 22 },
+        { label: 'D 曝光暗房', data: [21, 22, 13, 13, 8, 9], backgroundColor: C_D, borderWidth: 0, borderRadius: 3, barThickness: 22 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'rectRounded' } },
+        tooltip: { callbacks: { label: function (c) { return c.dataset.label + '：' + c.parsed.y + ' 分'; } } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: INK, font: { size: 9.5 } } },
+        y: { beginAtZero: true, max: 28, grid: { color: '#eee9e0' }, ticks: { stepSize: 5, color: '#6a6773' } }
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

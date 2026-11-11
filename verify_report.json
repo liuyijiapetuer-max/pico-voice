@@ -1,0 +1,176 @@
+{
+  "pdf": "G:\\minimaxworkspace\\pico-sonosphere\\声之建筑-落地方案.pdf",
+  "pages": 19,
+  "page_size_bad": [],
+  "page_size_ok": true,
+  "page_size_sample": {
+    "w": 595.92,
+    "h": 842.88
+  },
+  "extractable_chars_total": 25803,
+  "empty_pages": [],
+  "first_12_lines": "C O N T E N T S  ·  目 录\n本方案书的读法\n全书按「先给结论，再讲为什么，再给怎么做」的顺序编排。第 1 章是结论与三处关键设计修正，第 2 章是与竞品\n的正面对位，第 3–4 章是作品机制与官方空间音频 API 的核对结果，第 5–6 章是场景、交互、多窗口与内核、素\n材，第 7 章是硬指标、排期、风险与评分，第 8 章是可直接照着敲的文件结构与第一周逐日拆解。目录每一行都可\n点击跳转。\n01 结论与三处关键修正 3\n为什么现在做这个方向 3\n02 竞品对位：他们赢在第一眼 4\n03 作品机制与「显影」开场 6\n建筑感的三层 6\n04 空间音频引擎（官方 API 核对） 7",
+  "page_fill": [
+    {
+      "page": 1,
+      "bottom_pt": 1104.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 2,
+      "bottom_pt": 1964.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 3,
+      "bottom_pt": 3247.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 4,
+      "bottom_pt": 4416.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 5,
+      "bottom_pt": 5438.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 6,
+      "bottom_pt": 6638.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 7,
+      "bottom_pt": 7704.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 8,
+      "bottom_pt": 8909.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 9,
+      "bottom_pt": 9865.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 10,
+      "bottom_pt": 11206.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 11,
+      "bottom_pt": 12252.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 12,
+      "bottom_pt": 13247.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 13,
+      "bottom_pt": 14552.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 14,
+      "bottom_pt": 15569.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 15,
+      "bottom_pt": 16769.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 16,
+      "bottom_pt": 17912.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 17,
+      "bottom_pt": 18923.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 18,
+      "bottom_pt": 20178.0,
+      "blank_pct": 0.0
+    },
+    {
+      "page": 19,
+      "bottom_pt": 21143.0,
+      "blank_pct": 0.0
+    }
+  ],
+  "pages_over_33pct_blank": [],
+  "internal_links_total": 14,
+  "internal_links_sample": [
+    {
+      "page": 2,
+      "target_page": 3
+    },
+    {
+      "page": 2,
+      "target_page": 3
+    },
+    {
+      "page": 2,
+      "target_page": 4
+    },
+    {
+      "page": 2,
+      "target_page": 6
+    },
+    {
+      "page": 2,
+      "target_page": 6
+    },
+    {
+      "page": 2,
+      "target_page": 7
+    },
+    {
+      "page": 2,
+      "target_page": 8
+    },
+    {
+      "page": 2,
+      "target_page": 10
+    },
+    {
+      "page": 2,
+      "target_page": 11
+    },
+    {
+      "page": 2,
+      "target_page": 13
+    },
+    {
+      "page": 2,
+      "target_page": 14
+    },
+    {
+      "page": 2,
+      "target_page": 15
+    },
+    {
+      "page": 2,
+      "target_page": 16
+    },
+    {
+      "page": 2,
+      "target_page": 18
+    }
+  ],
+  "named_dests_total": 14,
+  "outline_present": true,
+  "outline_top_count": 7,
+  "toc_ids_in_html": [],
+  "resolved_link_count": 0,
+  "toc_page_map": {}
+}

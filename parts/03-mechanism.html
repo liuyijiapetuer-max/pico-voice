@@ -1,0 +1,90 @@
+<!-- ============================================================ -->
+<!-- 03 作品机制                                                    -->
+<!-- ============================================================ -->
+<section class="content" id="sec-3">
+  <span class="section-num">CHAPTER 03 · 机制</span>
+  <h2 class="section">作品机制与「显影」开场</h2>
+  <div class="section-line"></div>
+
+  <div class="dir-hero">
+    <div class="glyph">♪</div>
+    <div class="body">
+      <div class="en">SONOSPHERE</div>
+      <h3>声之建筑</h3>
+      <p class="oneline">听见的每一秒，在空间里长出会发声的建筑。</p>
+      <p>一段 60 秒的声音被切成 24 片，绕着你立成 24 根柱子。柱子越高，那一刻的能量越强；每根柱子都是一个真实声源，<strong>你绕着建筑走，声音也跟着转</strong>。</p>
+    </div>
+  </div>
+
+  <h3><span class="num">3.1</span>基本映射</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">输入 / 元素</th><th style="width:30%">映射</th><th>评委能读出什么</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">60 秒真实音频</td><td>切成 <strong>24 片</strong>（每片 2.5 秒）</td><td>时间有结构了——不是一条连续的流，是可以被「立起来」的 24 个瞬间</td></tr>
+      <tr><td class="bold">一根柱子</td><td>= 一片（24 根，等角分布成环，半径 1.6 m）</td><td>「一根柱子 = 一秒」——路演首句就说清</td></tr>
+      <tr><td class="bold">柱高</td><td>= 该片总能量（0.15 – 1.4 m）</td><td>响的地方高，静的地方矮 —— 建筑的轮廓就是这段声音的动态</td></tr>
+      <tr><td class="bold">柱色</td><td>= 频谱重心：低频深琥珀 / 中频橙 / 高频冷白</td><td>不用看数据也能感到「这段声音是沉的还是脆的」</td></tr>
+      <tr><td class="bold">柱面纹理</td><td>= 该片 24 频带能量的竖条（128 列 → 24 格，烘焙进贴图）</td><td>凑近看，每根柱子内部也有结构 —— 细节是「真做出来的」的信号</td></tr>
+      <tr><td class="bold">柱顶标签</td><td>= 时间码 / 频段 / 响度 dB</td><td>可读 = 可讨论。评委能指着某根柱问「这段是什么」</td></tr>
+      <tr><td class="bold">地面光环</td><td>同心光环 = 时间轴，当前播放位置那圈亮起</td><td>「现在听到的是第几秒」——空间化的进度条</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="sec-3-1"><span class="num">3.2</span>建筑感的三层（缺一层就退化成「声音可视化」）</h3>
+
+  <p>「把声音画成柱子」本身并不稀奇，任何频谱可视化都能做。<strong>让它成为「建筑」的，是下面三层叠起来。</strong></p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:14%">层</th><th style="width:34%">手段</th><th style="width:22%">评委感知</th><th>为什么这一层不可省</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">几何层</td><td>Stage 沉浸场景 + 24 柱环形 + 地面声呐光环 + 暗场</td><td>「我站在一圈柱子中间」</td><td>只有 Stage 能让声源绕着你走；窗口体放不下这个环</td></tr>
+      <tr><td class="bold">指向层</td><td><code>Directivity(pattern, sharpness)</code> 逐柱不同</td><td>「我绕到这根柱子后面，它变闷了」</td><td><strong>这是「声音真的在那个位置」最省力也最难反驳的证明</strong>——不是音效在循环，是有方向的声源</td></tr>
+      <tr><td class="bold">混响层</td><td><code>reverbVolume</code> + <code>AudioMixerGroupResource.setVolume()</code></td><td>「整个空间的大小 / 材质在变」</td><td>同一个声音换个混响 = 换了个房间。这一层直接命中「建筑」的语义</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">指向层的额外收益</span>
+    让<strong>低频柱用更全向的 pattern、高频柱用更聚焦的</strong>，评委就能听出这是两套不同的空间线索：低频包裹感强、高频定位感极强。
+    这是零成本的设计判断，但听起来立刻「专业」。
+  </div>
+
+  <h3><span class="num">3.3</span>开场仪式：把「显影」做成一个参数</h3>
+
+  <p>官方 Stage 有四种 style，其中 <strong>Progressive</strong> 可以用 <code>immersion</code>（0–100）连续调节「真实环境透传」与「虚拟场景」的比例：</p>
+
+  <div class="codeblock">immersion = 0    →  几乎纯真实房间，虚拟实体不可见
+immersion = 50   →  真实环境与虚拟场景各占一半（真实环境的光照仍来自 VST）
+immersion = 100  →  等价于 Full：纯虚拟场景，真实环境被完全遮住</div>
+
+  <div class="insight">
+    <span class="label">这就是「显影」本身</span>
+    <strong>immersion 从 0 推到 100：你眼前的客厅像一张照片在显影液里慢慢浮出，变成由声音构成的建筑。</strong>
+    <br><br>
+    <strong>不需要任何模型、贴图或动画资产</strong>——只需要一个参数在 6 秒内推过去。这是零资产成本、零外部依赖、且在模拟器上就能验收的戏剧性开场。
+  </div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:38%">manifest 配置项</th><th style="width:14%">取值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>pico.spatial.stage.id</code></td><td class="c">SONOSPHERE</td><td>默认 Stage 的唯一名</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.style</code></td><td class="c">待实测</td><td>Progressive 对应的数字枚举 —— 文档只给了名字（Automatic / Mixed / Progressive / Full），<strong>没给数字</strong>。W1 第一天必须四个取值各试一遍</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion</code></td><td class="c">50</td><td>默认沉浸度；开场动画从 0 推到 100</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_min</code></td><td class="c">0</td><td>下限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_max</code></td><td class="c">100</td><td>上限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.upperlimb</code></td><td class="c">1</td><td>上肢可见 —— 交互时手在画面里是加分项</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">退路（必须提前想好）</span>
+    若 Progressive 在模拟器上不可用或表现不对，退路是 <strong>Mixed + 自做一个内翻的暗色天球</strong>盖住 VST，再用贴图与自发光压出暗场。视觉上仍有「暗房 / 显影」的语汇，只是失去「真实房间被吞掉」那一层戏剧性。<strong>这条退路不依赖任何新 API。</strong>
+  </div>
+</section>

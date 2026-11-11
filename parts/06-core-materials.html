@@ -1,0 +1,82 @@
+<!-- ============================================================ -->
+<!-- 06 音频内核与素材                                              -->
+<!-- ============================================================ -->
+<section class="content" id="sec-6">
+  <span class="section-num">CHAPTER 06 · 内核</span>
+  <h2 class="section">音频内核与素材</h2>
+  <div class="section-line"></div>
+
+  <h3><span class="num">6.1</span>音频内核：与影像内核同构</h3>
+
+  <p>新建 <code>app/audio-core/</code>——<strong>纯 Kotlin、零 Android 依赖</strong>，与 <code>imaging-core</code> 一样可在 PC 侧跑单测。分层照抄影像内核的写法：</p>
+
+  <div class="codeblock">AudioFrame (PCM)  →  SpectrumAnalyzer  →  EnergyField(24×24)
+                  →  ColumnLayout  →  (Stage 实体 + 声源)</div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:26%">层</th><th style="width:38%">做什么</th><th>输出与验收</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>AudioFrame</code></td><td>PCM 帧容器（样本率 / 声道 / 时间戳）</td><td>与影像内核的 <code>Frame</code> 同构</td></tr>
+      <tr><td class="bold"><code>SpectrumAnalyzer</code></td><td>分帧 + 梅尔频谱</td><td>60 s → 24 段，每段 24 个频带 ⇒ <strong>24 × 24 能量矩阵</strong></td></tr>
+      <tr><td class="bold"><code>EnergyField</code></td><td>每段特征量提取</td><td>总能量 / 频谱重心 / 瞬态密度 / 高频占比 / <strong>房间感指标</strong></td></tr>
+      <tr><td class="bold"><code>RoomTone</code></td><td>房间感指标计算</td><td>频谱平坦度 + 高频衰减斜率的组合。混响多、空间大的录音给出不同的值 ⇒ 直接映射到 <code>reverbVolume</code> 与柱体「材质」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">单测（≥12 条，镜像影像内核的测试风格）</span>
+    静音输入全零 · 纯正弦的重心正确 · 脉冲串的瞬态密度正确 · 削波输入不越界 · 立体声左右不平衡的处理 · 时长边界（不足 / 超出 24 片）· 分段边界不重复不丢样 · 矩阵维度恒定 ……<br>
+    <strong>这是「完成度 10 分」与原创性护栏的共同证据</strong> —— 公开仓库里能跑绿的测试，比任何自述都有说服力。
+  </div>
+
+  <h3><span class="num">6.2</span>素材清单：需要 hommi 提供什么</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:8%" class="c">#</th><th style="width:24%">素材</th><th style="width:44%">要求</th><th style="width:12%" class="c">截止</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="c bold">1</td><td class="bold">60 秒音频（主）</td><td>手机录即可。<strong>首选：朗读一段文字</strong> —— 语速自然、有呼吸、有情绪起伏，柱子会长得不一样</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">2</td><td class="bold">60 秒音频（备 A）</td><td>城市街道（车、人、雨、施工）</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">3</td><td class="bold">60 秒音频（备 B）</td><td>雨夜窗边</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">4</td><td class="bold">可选：对应的文字稿</td><td>朗读类必给，显示在副窗 2。文字让「声音」有了语义，评委更容易记住</td><td class="c">11.12</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">6.3</span>录音指导（决定成败）</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>✅ 要有强起伏</b>说话、脚步、开关门、远处雷声 —— 起伏越大，柱高差异越大，视觉越有故事</div>
+    <div class="spec a"><b>✅ 在真实空间里录</b>客厅 / 走廊 / 楼道 —— 空间混响本身就是我们要分析的「房间感指标」</div>
+    <div class="spec b"><b>❌ 不要纯音乐</b>音乐频谱过于平稳，柱子会长得一样，视觉就没戏</div>
+    <div class="spec b"><b>❌ 不要持续噪声</b>雨声、空调声全程一样 ⇒ 24 根柱子几乎等高，「建筑」变成「栅栏」</div>
+    <div class="spec c"><b>📱 设备不限</b>手机录即可。要求只有两条：<strong>时长 60 秒</strong>、<strong>没有背景音乐</strong></div>
+    <div class="spec c"><b>🔒 合规</b>只用自己录的声音。街道录音避免拍到可识别人脸与清晰对话</div>
+  </div>
+
+  <div class="takeaway"><span class="icon">✓</span><span><strong>零外部素材</strong>——无模型下载、无 3D 资产、无第三方图库、无 Tripo API。这是本方向相对「指尖造物」的最大优势：<strong>没有拿不到就做不完的环节</strong>。</span></div>
+
+  <h3><span class="num">6.4</span>从音频到建筑的完整数据链</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">阶段</th><th style="width:36%">数据形态</th><th>落到画面 / 声音上的东西</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">PCM</td><td>60 s × 采样率 × 声道</td><td>原始素材</td></tr>
+      <tr><td class="bold">分帧</td><td>24 片 × 2.5 s</td><td>24 根柱子的存在</td></tr>
+      <tr><td class="bold">梅尔频谱</td><td>24 × 24 能量矩阵</td><td>柱高（行能量）+ 柱色（列重心）+ 柱面纹理（整行）</td></tr>
+      <tr><td class="bold">特征量</td><td>重心 / 瞬态 / 房间感</td><td>柱色、材质、<code>reverbVolume</code>、<code>Directivity</code> 的 pattern</td></tr>
+      <tr><td class="bold">音频事件</td><td>时间点回调</td><td>当前柱点亮、地面光环推进、活跃声源切换</td></tr>
+      <tr><td class="bold">空间音频</td><td>HRTF 渲染</td><td>你转头时，声音真的从那个方向来</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">这张表就是路演的技术骨架</span>
+    评委问「这到底是怎么做的」，答案就在这张链路上：<strong>一段真实录音 → 24×24 频谱矩阵 → 24 根柱子 → 4 个 HRTF 声源</strong>。
+    每一步都可验证、可复现、不可被「AI 生成的通用方案」四个字盖过去。
+  </div>
+</section>

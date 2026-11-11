@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>PICO Space Program 2026 · 声之建筑 SONOSPHERE 落地方案</title>
+<script src="vendor/chart.umd.js"></script>
+<style>
+  /* === @page + universal print color fidelity ============================ */
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* === Tokens — 暗房 / 琥珀 safelight ==================================== */
+  :root {
+    --ink:      #16151a;
+    --ink-2:    #3b3944;
+    --ink-3:    #6a6773;
+    --ink-4:    #94919c;
+    --hairline: #e3dfd6;
+    --rule:     #d2ccc0;
+    --surface:  #ffffff;
+    --mute:     #f4f1eb;
+    --accent:   #a35f00;   /* 暗房琥珀深 — 正文可读 5.0:1 */
+    --amber:    #e8a020;   /* 亮琥珀 — 仅用于深底 */
+    --teal:     #1f7a63;
+    --rose:     #b2453a;
+    --slate:    #3e5c76;
+    --cover-1:  #12111a;
+    --cover-2:  #1e1b27;
+    --cover-3:  #2b2331;
+    --font-d:   Georgia, "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+  }
+
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+                 "Hiragino Sans", "Apple SD Gothic Neo",
+                 "Microsoft YaHei", "Noto Sans CJK SC",
+                 "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink); background: var(--surface);
+    font-size: 10.5pt; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .content { padding: 0; }
+  .page-break  { page-break-after: always; }
+  .avoid-break { page-break-inside: avoid; }
+
+  /* === Cover — framed dark block (暗房红灯) ============================== */
+  .cover {
+    height: 268mm;
+    background:
+      radial-gradient(circle at 78% 16%, rgba(232,160,32,0.26), transparent 58%),
+      radial-gradient(circle at 12% 88%, rgba(178,69,58,0.20), transparent 55%),
+      linear-gradient(140deg, var(--cover-1) 0%, var(--cover-2) 52%, var(--cover-3) 100%);
+    color: #f7f3ea; padding: 26mm 18mm 18mm; position: relative; overflow: hidden;
+    page-break-after: always;
+    border: 1px solid rgba(232,160,32,0.30);
+  }
+  .cover .frame { position: absolute; inset: 8mm; border: 0.6pt solid rgba(232,160,32,0.35); }
+  .cover .sq { position: absolute; width: 7mm; height: 7mm; border: 1.2pt solid var(--amber); }
+  .cover .sq.tl { top: 6mm; left: 6mm; border-right: 0; border-bottom: 0; }
+  .cover .sq.tr { top: 6mm; right: 6mm; border-left: 0; border-bottom: 0; }
+  .cover .sq.bl { bottom: 6mm; left: 6mm; border-right: 0; border-top: 0; }
+  .cover .sq.br { bottom: 6mm; right: 6mm; border-left: 0; border-top: 0; }
+  .cover-tag {
+    display: inline-block; padding: 5px 13px; border: 1px solid rgba(232,160,32,0.55);
+    border-radius: 18px; font-size: 9pt; letter-spacing: 2.4px; color: var(--amber);
+    position: relative; z-index: 2;
+  }
+  .cover h1 {
+    font-family: var(--font-d);
+    font-size: 42pt; font-weight: 700; margin: 26px 0 14px; line-height: 1.16;
+    letter-spacing: -0.5px; position: relative; z-index: 2;
+  }
+  .cover h1 em { font-style: normal; color: var(--amber); }
+  .cover .subtitle {
+    font-size: 12.5pt; color: rgba(247,243,234,0.80); max-width: 140mm;
+    line-height: 1.8; position: relative; z-index: 2; margin: 0 0 6px;
+  }
+  .cover .lede {
+    font-size: 10pt; color: rgba(247,243,234,0.60); max-width: 140mm;
+    line-height: 1.7; position: relative; z-index: 2;
+  }
+  .cover-meta {
+    position: absolute; bottom: 16mm; left: 18mm; right: 18mm;
+    display: flex; justify-content: space-between; align-items: flex-end; z-index: 2;
+    border-top: 0.6pt solid rgba(232,160,32,0.28); padding-top: 7mm;
+  }
+  .meta-stats { display: flex; gap: 26px; }
+  .meta-stat .num { font-size: 25pt; font-weight: 700; line-height: 1; color: var(--amber); }
+  .meta-stat .lbl { font-size: 8.5pt; color: rgba(247,243,234,0.62); margin-top: 5px; letter-spacing: 1px; }
+  .cover-info { text-align: right; color: rgba(247,243,234,0.62); font-size: 9pt; line-height: 1.9; }
+  .cover-dirs {
+    position: absolute; left: 18mm; right: 18mm; top: 124mm; z-index: 2;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 7mm;
+  }
+  .cover-dirs .cd { border-top: 0.8pt solid rgba(232,160,32,0.42); padding-top: 4.5mm; }
+  .cover-dirs .cd .cd-l { font-family: var(--font-d); font-size: 25pt; font-weight: 700; color: var(--amber); line-height: 1; }
+  .cover-dirs .cd .cd-n { display: block; font-size: 11pt; color: #f7f3ea; margin-top: 2.6mm; font-weight: 600; }
+  .cover-dirs .cd .cd-e { display: block; font-size: 7.2pt; letter-spacing: 1.5px; color: rgba(247,243,234,0.42); margin-top: 1.4mm; }
+
+  /* === Table of contents (clickable) ==================================== */
+  .toc { margin-top: 4mm; }
+  .toc-row {
+    display: flex; align-items: baseline; gap: 6px;
+    text-decoration: none; color: var(--ink); padding: 5.5px 0;
+    border-bottom: 0.5pt dotted var(--rule);
+  }
+  .toc-row .n { font-size: 8.5pt; color: var(--accent); font-weight: 700; min-width: 22mm; letter-spacing: 0.6px; }
+  .toc-row .t { font-size: 11pt; font-weight: 600; }
+  .toc-row .dots { flex: 1; border-bottom: 0.5pt dotted var(--rule); margin: 0 4px; transform: translateY(-3px); }
+  .toc-row .pg { font-size: 9.5pt; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .toc-row.sub { padding-left: 22mm; border-bottom: 0.5pt dotted #efece5; }
+  .toc-row.sub .n { min-width: 0; }
+  .toc-row.sub .t { font-size: 10pt; font-weight: 500; color: var(--ink-2); }
+  .toc-row.sub .pg { font-size: 9pt; }
+  .toc-sec-title {
+    font-family: var(--font-d); font-size: 15pt; font-weight: 700;
+    margin: 0 0 10px; color: var(--ink);
+  }
+
+  /* === Section header =================================================== */
+  h2.section {
+    font-family: var(--font-d);
+    font-size: 21pt; font-weight: 700; margin: 0 0 4px;
+    color: var(--ink); letter-spacing: -0.3px; page-break-after: avoid;
+  }
+  .section-num {
+    display: inline-block; font-size: 9.5pt; font-weight: 700;
+    color: var(--accent); letter-spacing: 3px; margin-bottom: 7px;
+  }
+  .section-line { width: 48px; height: 3px; background: var(--accent); border-radius: 2px; margin: 11px 0 20px; }
+  .sec-head { page-break-inside: avoid; page-break-after: avoid; }
+  .appendix-start { page-break-after: avoid; }
+  .dir-hero { page-break-inside: avoid; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; font-weight: 700; margin: 20px 0 8px; color: var(--ink); page-break-after: avoid; }
+  .mini-head {
+    margin: 24px 0 16px; padding-top: 12px; border-top: 2px solid var(--accent);
+    display: flex; align-items: baseline; gap: 12px; page-break-after: avoid;
+  }
+  .mini-head .mh-t { font-family: var(--font-d); font-size: 15pt; font-weight: 700; color: var(--ink); }
+  .mini-head .mh-s { font-size: 8.5pt; color: var(--ink-3); letter-spacing: 1.2px; }
+  h3 .num { color: var(--ink-4); font-weight: 500; margin-right: 8px; font-size: 10.5pt; }
+  h4 { font-size: 10.5pt; font-weight: 700; margin: 14px 0 6px; color: var(--ink-2); }
+  p { margin: 7px 0; color: var(--ink-2); orphans: 3; widows: 3; }
+  li { margin: 3.5px 0; line-height: 1.6; orphans: 2; widows: 2; }
+  ul, ol { margin: 7px 0; padding-left: 17px; color: var(--ink-2); }
+  strong { color: var(--ink); }
+  /* 深底块里的加粗字：全局 strong 是深色，在暗底上会变成隐形字 */
+  .dir-hero .body strong { color: #fff; }
+  .conclusion strong { color: #fff; }
+  .codeblock strong { color: #f2d9a4; }
+  .lead {
+    font-size: 11pt; color: var(--ink-2); line-height: 1.78;
+    border-left: 3px solid var(--accent);
+    background: linear-gradient(90deg, rgba(163,95,0,0.055), transparent);
+    padding: 13px 16px; border-radius: 3px; margin: 14px 0 20px;
+  }
+
+  /* === KPI grid ========================================================= */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin: 18px 0; }
+  .kpi { padding: 13px; border-radius: 10px; background: var(--mute); border: 1px solid var(--rule); }
+  .kpi.amber { background: linear-gradient(135deg, #fdf3e2, #f9e6c6); border-color: #e8c489; }
+  .kpi.teal  { background: linear-gradient(135deg, #e7f3ef, #d5eae3); border-color: #a6cec1; }
+  .kpi.rose  { background: linear-gradient(135deg, #fbeceb, #f5d9d5); border-color: #e0b0a9; }
+  .kpi.slate { background: linear-gradient(135deg, #eaeff4, #dbe3ec); border-color: #aebfd0; }
+  .kpi .label { font-size: 8pt; color: var(--ink-3); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600; }
+  .kpi .value { font-size: 21pt; font-weight: 700; color: var(--ink); line-height: 1.1; margin-top: 3px; }
+  .kpi .unit  { font-size: 10.5pt; color: var(--ink-3); margin-left: 2px; font-weight: 500; }
+  .kpi .desc  { font-size: 8.5pt; color: var(--ink-3); margin-top: 4px; line-height: 1.45; }
+
+  /* === Chart card ======================================================= */
+  .chart-card {
+    background: #fff; border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 15px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    page-break-inside: avoid;
+  }
+  .chart-title { font-size: 10.5pt; font-weight: 700; color: var(--ink); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  .chart-title::before { content: ""; width: 4px; height: 13px; background: var(--accent); border-radius: 2px; }
+  .chart-sub { font-size: 8.5pt; color: var(--ink-4); margin: 0 0 10px; padding-left: 12px; line-height: 1.5; }
+  .chart-wrap { position: relative; height: 232px; }
+  .chart-wrap.tall  { height: 300px; }
+  .chart-wrap.short { height: 175px; }
+  .chart-wrap.xtall { height: 360px; }
+
+  /* === Tables =========================================================== */
+  table.data {
+    width: 100%; border-collapse: collapse; font-size: 8.8pt; margin: 12px 0;
+    background: #fff; border: 1px solid var(--hairline);
+  }
+  table.data thead th {
+    background: var(--cover-1); color: #f2ede3; padding: 8px 9px; text-align: left;
+    font-weight: 600; font-size: 8.2pt; letter-spacing: 0.4px;
+  }
+  table.data tbody td { padding: 6.5px 9px; border-bottom: 1px solid var(--mute); color: var(--ink-2); vertical-align: top; line-height: 1.45; }
+  table.data tbody tr { page-break-inside: avoid; }
+  table.data tbody tr:last-child td { border-bottom: 0; }
+  table.data tbody tr:nth-child(even) { background: #fbf9f5; }
+  table.data tbody td.bold { font-weight: 700; color: var(--ink); }
+  table.data tbody td.c { text-align: center; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 7.8pt; font-weight: 600; white-space: nowrap; }
+  .pill-bad  { background: #ffebee; color: #c62828; }
+  .pill-warn { background: #fff3e0; color: #b35c00; }
+  .pill-ok   { background: #e8f5e9; color: #2e7d32; }
+  .pill-good { background: #e3f2fd; color: #1565c0; }
+  .pill-best { background: #f3e5f5; color: #6a1b9a; }
+
+  /* === Direction hero block ============================================= */
+  .dir-hero {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: linear-gradient(135deg, var(--cover-1), var(--cover-3));
+    color: #f4efe6; padding: 16px 18px; border-radius: 10px; margin: 0 0 20px;
+  }
+  .dir-hero .glyph {
+    font-family: var(--font-d); font-size: 40pt; line-height: 0.9; font-weight: 700;
+    color: var(--amber); min-width: 16mm; text-align: center; padding-top: 2px;
+  }
+  .dir-hero .body { flex: 1; }
+  .dir-hero .body .en { font-size: 8.5pt; letter-spacing: 2.4px; color: rgba(232,160,32,0.85); font-weight: 700; }
+  .dir-hero .body h3 { color: #fff; font-size: 16pt; margin: 4px 0 7px; font-family: var(--font-d); }
+  .dir-hero .body p { color: rgba(244,239,230,0.78); font-size: 9.8pt; margin: 0; line-height: 1.65; }
+  .dir-hero .body .oneline { color: var(--amber); font-size: 10.5pt; font-weight: 600; margin-bottom: 5px; }
+
+  /* === Two-column spec list ============================================ */
+  .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin: 10px 0 4px; }
+  .spec {
+    border-left: 2px solid var(--rule); padding: 4px 0 4px 9px; font-size: 9.2pt;
+    color: var(--ink-2); line-height: 1.55;
+  }
+  .spec b { color: var(--ink); display: block; font-size: 9.2pt; margin-bottom: 1px; }
+  .spec.a { border-left-color: var(--accent); }
+  .spec.b { border-left-color: var(--teal); }
+  .spec.c { border-left-color: var(--rose); }
+  .spec.d { border-left-color: var(--slate); }
+
+  /* === Insight callout ================================================== */
+  .insight {
+    background: linear-gradient(135deg, #fdf6e8, #fbeed4);
+    border: 1px solid #eccf96; border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 11px 15px; margin: 15px 0; font-size: 9.6pt; color: var(--ink-2);
+    line-height: 1.68;
+  }
+  .insight .label { font-weight: 700; color: #8f5200; font-size: 8.5pt; letter-spacing: 1.2px; margin-right: 7px; }
+  .insight.warn { background: linear-gradient(135deg, #fdf1ef, #f9e0db); border-color: #e5b4aa; border-left-color: var(--rose); }
+  .insight.warn .label { color: #97382e; }
+
+  /* === Conclusion / takeaways =========================================== */
+  .conclusion {
+    background: linear-gradient(135deg, #17161f, #2a2331);
+    color: #f4efe6; padding: 22px; border-radius: 12px; margin: 18px 0;
+  }
+  .conclusion h3 { color: #fff; margin-top: 0; font-family: var(--font-d); font-size: 15pt; }
+  .conclusion p { color: rgba(244,239,230,0.82); }
+  .conclusion ul { color: rgba(244,239,230,0.82); }
+  .takeaway { display: flex; gap: 9px; margin: 7px 0; padding: 9px 12px; border-radius: 7px; background: var(--mute); font-size: 9.3pt; color: var(--ink-2); line-height: 1.6; }
+  .takeaway .icon { font-weight: 700; color: var(--accent); min-width: 16px; }
+
+  /* === Versus / recommend cards ========================================= */
+  .versus { display: grid; grid-template-columns: 1fr auto 1fr; gap: 11px; align-items: stretch; margin: 14px 0; }
+  .vs-card { padding: 14px; border-radius: 10px; border: 1px solid var(--rule); background: #fff; }
+  .vs-card.left  { background: linear-gradient(160deg, #f7f3ec, #fff); }
+  .vs-card.right { background: linear-gradient(160deg, #f3f0f6, #fff); border-color: #cfc6da; }
+  .vs-divider { display: flex; align-items: center; justify-content: center; font-size: 14pt; font-weight: 700; color: var(--ink-4); }
+  .vs-card h4 { margin: 0 0 6px; font-size: 12pt; color: var(--ink); }
+  .vs-card .tag { display: inline-block; font-size: 7.8pt; padding: 2px 8px; border-radius: 10px; background: rgba(0,0,0,0.06); margin-bottom: 5px; }
+  .vs-card ul { margin: 6px 0 0; padding-left: 16px; font-size: 9.2pt; line-height: 1.65; }
+  .recommend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin: 16px 0; }
+  .rec-card { padding: 14px; border-radius: 10px; border: 1px solid var(--rule); background: #fff; position: relative; }
+  .rec-card.pick { background: linear-gradient(160deg, #fdf6e8, #fff); border-color: #e3c288; }
+  .rec-card .level { display: inline-block; padding: 2px 9px; border-radius: 11px; font-size: 7.8pt; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 7px; background: var(--ink-3); color: #fff; }
+  .rec-card.pick .level { background: var(--accent); }
+  .rec-card h4 { margin: 0 0 5px; font-size: 11pt; color: var(--ink); }
+  .rec-card .desc { font-size: 9pt; color: var(--ink-2); line-height: 1.6; }
+
+  /* === Timeline strip =================================================== */
+  .timeline { display: flex; gap: 0; margin: 14px 0; background: var(--mute); border-radius: 10px; padding: 12px; }
+  .gen { flex: 1; text-align: center; padding: 8px 5px; position: relative; }
+  .gen + .gen::before { content: ""; position: absolute; left: -1px; top: 14px; width: 3px; height: 3px; border-radius: 50%; background: #c0bab0; }
+  .gen .tag { display: inline-block; padding: 3px 10px; border-radius: 11px; color: #fff; font-size: 7.8pt; font-weight: 700; background: var(--ink-3); }
+  .gen.w1 .tag { background: #8c7a5f; }
+  .gen.w2 .tag { background: var(--slate); }
+  .gen.w3 .tag { background: var(--teal); }
+  .gen.w4 .tag { background: var(--accent); }
+  .gen .key { font-size: 8.6pt; font-weight: 600; color: var(--ink); margin-top: 5px; line-height: 1.4; }
+  .gen .note { font-size: 7.8pt; color: var(--ink-3); margin-top: 3px; line-height: 1.4; }
+
+  /* === Gantt ============================================================ */
+  .gantt { width: 100%; border-collapse: collapse; font-size: 8.3pt; margin: 10px 0; }
+  .gantt th { background: var(--cover-1); color: #f2ede3; padding: 6px 7px; font-size: 7.8pt; font-weight: 600; text-align: left; }
+  .gantt th.wk { width: 74mm; }
+  .gantt td { padding: 5px 7px; border-bottom: 1px solid var(--mute); vertical-align: middle; }
+  .gantt td.lbl { color: var(--ink-2); }
+  .gantt td.lbl b { color: var(--ink); }
+  .gantt .track { position: relative; height: 16px; background: var(--mute); border-radius: 3px; overflow: hidden; }
+  .gantt .bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+  .gantt .bar.a { background: var(--accent); }
+  .gantt .bar.b { background: var(--teal); }
+  .gantt .bar.c { background: var(--rose); }
+  .gantt .bar.d { background: var(--slate); }
+  .gantt .wkhead { display: flex; }
+  .gantt .wkhead span { flex: 1; text-align: center; font-size: 7.6pt; color: var(--ink-3); }
+
+  /* === Swatches ========================================================= */
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+  .swatch { display: flex; align-items: center; gap: 6px; font-size: 8.5pt; color: var(--ink-2); }
+  .swatch i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* === Code block ======================================================= */
+  .codeblock {
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 8pt; line-height: 1.6; background: #1a1820; color: #e6e0d4;
+    padding: 11px 14px; border-radius: 8px; margin: 10px 0;
+    border-left: 3px solid var(--accent); white-space: pre-wrap;
+    page-break-inside: avoid;
+  }
+
+  /* === Footer meta ====================================================== */
+  .footer-meta { border-top: 1px solid var(--hairline); margin-top: 26px; padding-top: 14px; font-size: 8.3pt; color: var(--ink-4); }
+  .footer-meta h4 { color: var(--ink-2); font-size: 9.5pt; margin: 0 0 7px; }
+  .footer-meta ul { margin: 5px 0; padding-left: 17px; line-height: 1.7; }
+
+  /* === Print fragmentation guards ==========================================
+     Chromium 的 page-break-after: avoid 不可靠（会把标题留在页底而正文挪走），
+     因此以「块内不拆」为主：这些原子块不允许被分页切开。 */
+  .kpis, .timeline, .versus, .recommend-grid, .specs, .swatches,
+  .takeaway, .insight, .footer-meta, .conclusion, .gantt tr, .gantt thead {
+    page-break-inside: avoid;
+  }
+  h2.section, h3, h4 { break-after: avoid; }
+
+  /* === Screen emulation ================================================= */
+  @media screen {
+    html { background: #cfcfcf; }
+    body { margin: 0; padding: 20px 0; }
+    body > section {
+      width: 210mm; min-height: 297mm; margin: 0 auto 20px;
+      background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      box-sizing: border-box; overflow: hidden;
+    }
+  }
+</style>
+</head>
+<body>
+<!-- ============================================================ -->
+<!-- COVER + TOC                                                     -->
+<!-- ============================================================ -->
+<section class="cover">
+  <div class="frame"></div>
+  <div class="sq tl"></div><div class="sq tr"></div><div class="sq bl"></div><div class="sq br"></div>
+
+  <span class="cover-tag">PICO SPACE PROGRAM 2026 · 开发者大赛</span>
+  <h1>声之建筑<br>让声音<em>长成</em>建筑</h1>
+  <p class="subtitle">PICO Spatial 赛道 · 单人零硬件预算 · 方向 A SONOSPHERE 的完整落地方案</p>
+  <p class="lede">一份可以直接开工的执行稿：作品机制、官方空间音频 API 核对结果、三处必须修正的设计错误、逐周排期与每周闸门、风险止损线、文件结构与第一周逐日拆解、路演脚本与评委问答。</p>
+
+  <div class="cover-dirs">
+    <div class="cd"><span class="cd-l">01</span><span class="cd-n">独占空间音频</span><span class="cd-e">SPATIAL AUDIO</span></div>
+    <div class="cd"><span class="cd-l">0</span><span class="cd-n">硬件支出</span><span class="cd-e">ZERO CAPEX</span></div>
+    <div class="cd"><span class="cd-l">60s</span><span class="cd-n">唯一素材</span><span class="cd-e">ONE RECORDING</span></div>
+    <div class="cd"><span class="cd-l">4</span><span class="cd-n">空间表面</span><span class="cd-e">STAGE + 3 PANEL</span></div>
+  </div>
+
+  <div class="cover-meta">
+    <div class="meta-stats">
+      <div class="meta-stat"><div class="num">91</div><div class="lbl">六维预估</div></div>
+      <div class="meta-stat"><div class="num">18–22</div><div class="lbl">新写人日</div></div>
+      <div class="meta-stat"><div class="num">11.22</div><div class="lbl">止损闸门</div></div>
+    </div>
+    <div class="cover-info">
+      <div>落地方案 v1.0 · 执行稿</div>
+      <div>2026-11-08 · 距提交截止 41 天</div>
+      <div>依据：官方 SDK 6.1 文档 + 已验收工程 + 竞品情报</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS                                              -->
+<!-- ============================================================ -->
+<section class="content page-break" id="toc">
+  <div class="sec-head"><span class="section-num">CONTENTS · 目录</span>
+  <h2 class="section">本方案书的读法</h2>
+  <div class="section-line"></div></div>
+
+  <p class="lead">全书按「先给结论，再讲为什么，再给怎么做」的顺序编排。第 1 章是结论与三处关键设计修正，第 2 章是与竞品的正面对位，第 3–4 章是作品机制与官方空间音频 API 的核对结果，第 5–6 章是场景、交互、多窗口与内核、素材，第 7 章是硬指标、排期、风险与评分，第 8 章是可直接照着敲的文件结构与第一周逐日拆解。<strong>目录每一行都可点击跳转。</strong></p>
+
+  <nav class="toc" aria-label="Table of contents">
+    <a class="toc-row" href="#sec-1"><span class="n">01</span><span class="t">结论与三处关键修正</span><span class="dots"></span><span class="pg">3</span></a>
+    <a class="toc-row sub" href="#sec-1-1"><span class="t">为什么现在做这个方向</span><span class="dots"></span><span class="pg">3</span></a>
+    <a class="toc-row" href="#sec-2"><span class="n">02</span><span class="t">竞品对位：他们赢在第一眼</span><span class="dots"></span><span class="pg">4</span></a>
+    <a class="toc-row" href="#sec-3"><span class="n">03</span><span class="t">作品机制与「显影」开场</span><span class="dots"></span><span class="pg">6</span></a>
+    <a class="toc-row sub" href="#sec-3-1"><span class="t">建筑感的三层</span><span class="dots"></span><span class="pg">6</span></a>
+    <a class="toc-row" href="#sec-4"><span class="n">04</span><span class="t">空间音频引擎（官方 API 核对）</span><span class="dots"></span><span class="pg">7</span></a>
+    <a class="toc-row sub" href="#sec-4-1"><span class="t">API 清单与参数</span><span class="dots"></span><span class="pg">8</span></a>
+    <a class="toc-row" href="#sec-5"><span class="n">05</span><span class="t">场景 · 交互 · 多窗口</span><span class="dots"></span><span class="pg">10</span></a>
+    <a class="toc-row" href="#sec-6"><span class="n">06</span><span class="t">音频内核与素材</span><span class="dots"></span><span class="pg">11</span></a>
+    <a class="toc-row" href="#sec-7"><span class="n">07</span><span class="t">硬指标 · 排期 · 风险 · 评分</span><span class="dots"></span><span class="pg">13</span></a>
+    <a class="toc-row" href="#sec-8"><span class="n">08</span><span class="t">执行落地与决策</span><span class="dots"></span><span class="pg">14</span></a>
+    <a class="toc-row sub" href="#sec-8-1"><span class="t">第一周 Day 1–5</span><span class="dots"></span><span class="pg">15</span></a>
+    <a class="toc-row sub" href="#sec-8-2"><span class="t">与方向 D 的关系</span><span class="dots"></span><span class="pg">16</span></a>
+    <a class="toc-row" href="#sec-appx"><span class="n">A</span><span class="t">附录 A · 官方 API 与 Stage 配置速查</span><span class="dots"></span><span class="pg">18</span></a>
+  </nav>
+
+  <div class="insight" style="margin-top:22px">
+    <span class="label">一句话结论</span>
+    声之建筑值得做，而且比 11.07 那版判断更强：<strong>空间音频是官方点名的硬指标，而竞品三队全部没做</strong>；它还是核心 SDK 能力（不需实验标志、不依赖 OS 6），因此真机门槛比「拍照变山」那条路更低。真正的死穴只有一个——<strong>拿不到真机</strong>。止损线设在 <strong>11.22</strong>，届时验不出声源定位就立刻切方向 D，切换成本约 1 天。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 01 结论与三处关键修正                                           -->
+<!-- ============================================================ -->
+<section class="content" id="sec-1">
+  <div class="sec-head"><span class="section-num">CHAPTER 01 · 结论</span>
+  <h2 class="section">结论与三处关键修正</h2>
+  <div class="section-line"></div></div>
+
+  <p class="lead">声之建筑值得做，而且比 11.07 那版判断更强。三条新依据：①<strong>竞品三队全部没有空间音频</strong>——官方硬指标点名的那一条，是 A 队（空间社交）、B 队（AI 校园）、C 队（机器人实验室）都没碰的位置；②<strong>空间音频是 Spatial SDK 的核心能力，不是实验性 API</strong>，不需要 <code>pico.spatial.use_experimental_api</code>，不要求 PICO OS 6，不依赖 SpatialML；③<strong>零外部依赖</strong>——不需要后端、账号、网络、模型下载、3D 资产，只需要一段 60 秒录音。</p>
+
+  <div class="insight warn">
+    <span class="label">唯一真正的死穴</span>
+    空间音频的听感（方向、距离、指向性）<strong>只能在头显上验证</strong>，模拟器只能验证「声音在播、坐标在动」。
+    <br><br>
+    <strong>止损线提前到 W2：若 11.22（W2 结束）仍无法在真机上验证声源定位，立即切方向 D。</strong>
+    理由不变且更硬：拿不到的设备不会因为再等一周就来；而 D 的全部分数都不依赖它。
+  </div>
+
+  <h3 id="sec-1-1"><span class="num">1.1</span>为什么现在做这个方向</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>独占一条官方硬指标</b>空间音频在官方五条硬指标里点名，且三支竞品队伍<strong>一个都没做</strong>。这是唯一能「独占」的位置——不是做得更好，是别人根本没碰。</div>
+    <div class="spec a"><b>技术门槛反而更低</b>空间音频是核心 SDK 能力（<code>ObjectAudioComponent</code> / <code>AmbientAudioComponent</code> / <code>Directivity</code> / <code>AudioEvents</code>），不需要实验性标志，不依赖 OS 6。而「拍照变山」那条路依赖 SpatialML → 要求 OS 6 → PICO 4 Ultra（OS5）可能整个用不了。</div>
+    <div class="spec b"><b>媒介不可替代</b>声音的方向性、远近、指向性在 2D 屏幕上<strong>不存在</strong>。评委戴上头显转一圈就能听出空间结构——这是屏幕永远做不到的，也是「只有 XR 能做」的硬证明。</div>
+    <div class="spec b"><b>零外部依赖</b>不需要后端服务、账号体系、网络请求、模型下载、3D 资产库、Tripo。演示现场断网照常跑——而竞品三队全部依赖后端或 LLM，断网即崩。</div>
+    <div class="spec c"><b>评委能亲手参与</b>转身找声源、绕到柱背后听变化——这是「体验」而不只是「观看」。三队的最小交付都是线性点击流程。</div>
+    <div class="spec c"><b>可自证深度</b>作品可溯源：公开仓库 + 内核单测 + 安装包与 Commit ID 一一对应。路线为「一个人做的」这一质疑的正面答案。</div>
+  </div>
+
+  <h3><span class="num">1.2</span>与 11.07 概念稿的三处关键修正</h3>
+
+  <p>方案书 §4 的概念稿写于 11.07。本轮逐条核对了官方 SDK 6.1 的 agent-vault 文档，发现<strong>三处必须修正的设计错误</strong>，其中一处是根本性的。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">修正</th><th style="width:30%">原稿写法</th><th style="width:30%">核实后</th><th>为什么必须改</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">① 主窗形态<br><span class="pill pill-bad">根本性</span></td>
+        <td>24 根柱子放在半径 1.6 m 的环上，装在 <strong>Volumetric 主窗</strong>里</td>
+        <td>主窗必须是 <strong>Stage 沉浸场景</strong>（<code>DefaultStage</code>），3 个副窗维持 Planar</td>
+        <td>窗口体实测 <strong>0.768 m 立方、X 方向可见仅 ±0.384 m</strong>，1.6 m 的环根本放不下，只有正前方约 ±120° 露得出来且柱子会被切边。官方「Create immersive spatial audio」样例用的就是 <code>DefaultStage</code> + Planar 控制面板——<strong>声源能绕着你走，前提是它是 Stage</strong></td>
+      </tr>
+      <tr>
+        <td class="bold">② 遮挡实现</td>
+        <td>「绕到柱背面时该声源被遮挡变闷」——计划自己写遮挡模型</td>
+        <td>用官方内建的 <code>Directivity(pattern, sharpness)</code></td>
+        <td>指向性是官方组件的一等参数：<code>pattern</code>（0 全向 → 1 八字形）决定极性图形状，<code>sharpness</code> 决定聚焦度。<strong>零成本拿到「绕到背面声音真的变闷」</strong>，而这正是「声音真的在那个位置」最省力也最难反驳的证明</td>
+      </tr>
+      <tr>
+        <td class="bold">③ 音画同步</td>
+        <td>自己算播放进度，对齐柱子的点亮与呼吸</td>
+        <td>用官方 <code>AudioEvents</code>——按播放时间点触发回调</td>
+        <td>同步由系统保证，<strong>不受帧率与调度抖动影响</strong>。自己算进度会随负载漂移，在决赛现场掉帧时最先崩掉的就是音画同步</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">还有一处原稿说错了，这里更正</span>
+    §4 写「影像内核的直方图 / 缺陷判据可以扔掉」——<strong>扔的是语义，不是骨架</strong>。
+    <code>Frame → Analyzer → Field → MeshBuilder → MeshModel</code> 这套分层照抄给音频侧（<code>AudioFrame → SpectrumAnalyzer → EnergyField → ColumnMeshBuilder</code>），连同 42 个内核单测的测试基建一起转过去。详见第 8 章。
+  </div>
+
+  <div class="kpis">
+    <div class="kpi amber"><div class="label">六维预估</div><div class="value">91<span class="unit"> / 100</span></div><div class="desc">四方向第一，领先 D 4–5 分</div></div>
+    <div class="kpi teal"><div class="label">新写工作量</div><div class="value">18–22<span class="unit"> 人日</span></div><div class="desc">不含稳定性压测与打磨</div></div>
+    <div class="kpi rose"><div class="label">止损闸门</div><div class="value">11.22</div><div class="desc">真机验不出定位即切 D</div></div>
+    <div class="kpi slate"><div class="label">外部依赖</div><div class="value">1<span class="unit"> 段录音</span></div><div class="desc">零后端 / 零账号 / 零网络</div></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 02 竞品对位                                                    -->
+<!-- ============================================================ -->
+<section class="content" id="sec-2">
+  <div class="sec-head"><span class="section-num">CHAPTER 02 · 对位</span>
+  <h2 class="section">竞品对位：他们赢在第一眼</h2>
+  <div class="section-line"></div></div>
+
+  <p class="lead">情报来源：飞书 wiki《X University × PICO Space Program 2026 — 三队组建与开发安排》。这不是一个竞品作品，是<strong>一个组织的三队作战计划</strong>：40+ 精神股东、12 名正式队员（三队各 ≤4 人）、名单外联合共建成员开放参与（设计 / 3D 美术 / AIGC / 音效 / 测试 / 视频）。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:12%">队伍</th><th style="width:16%">赛道</th><th style="width:26%">创意原型</th><th style="width:18%">最小交付</th><th>官方「空间音频」</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">A 队 XLink Spatial</td><td class="c"><strong>PICO Spatial (Kotlin)</strong></td><td>把 LinkedIn 搬进三维空间（空间社交 + AI 匹配创造者）</td><td>查看创造者 → 发现项目 → 发起连接</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold">B 队 Living World</td><td class="c">Unity Spatial</td><td>AI 原生虚拟大学（AI Scholar 导师 + X Quest 任务）</td><td>进入校园 → 与 AI 对话 → 领取任务</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold">C 队 X Future Lab</td><td class="c">OpenXR</td><td>沉浸式未来实验室（机器人 / AI / 智能硬件 + 互动挑战）</td><td>进入实验室 → 操作设备 → 完成挑战</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold" style="color:var(--accent)">我们 · 声之建筑</td><td class="c"><strong>PICO Spatial (Kotlin)</strong></td><td><strong>把不可见的声音变成能走进去的建筑</strong></td><td><strong>转头找声源 → 绕到柱背听变化</strong></td><td><span class="pill pill-best">最强命中</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">2.1</span>他们三个创意的共同结构：「空间化的已知品类」</h3>
+
+  <p>把三个方向摊开看，它们是同一类东西的不同实例：<strong>给一个大家熟悉的 2D 品类套上 VR 外壳</strong>。这在评审语境里是<strong>安全牌</strong>——评委秒懂、演示不易翻车。但它有两个死穴：</p>
+
+  <div class="specs avoid-break">
+    <div class="spec b"><b>死穴一 · 没有一个是「只有 XR 能做」的</b>把 LinkedIn、校园、实验室搬进 VR，PCVR 或手机 VR 都能做到八成。评委问「<strong>为什么必须戴头显</strong>」，他们只能答「沉浸感更强」——这是 XR 评审里的弱答案，直接压「创新 25」分。</div>
+    <div class="spec b"><b>死穴二 · 抄起来很快</b>「社交进空间」「AI 进校园」是任何人一周能想到的提案，<strong>没有防御性</strong>。我们把一段录音变成一栋建筑，抄不走——因为它需要「音频分析 → 空间几何 → 空间音频定位」三件事同时成立。</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">竞争结构对比：五个维度上谁占优</div>
+    <div class="chart-sub">同一把尺子量三个对象。「竞品典型」代表 X-in-VR 类作品的一般形态。</div>
+    <div class="chart-wrap"><canvas id="ch-compare"></canvas></div>
+  </div>
+
+  <h3><span class="num">2.2</span>逐项对位</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:20%">维度</th><th style="width:24%">竞品三队</th><th style="width:24%">我们</th><th>判定</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">创意原型</td><td>空间化的已知品类</td><td>不可见的物理量 → 可走进去的空间</td><td><span class="pill pill-best">结构不同</span></td></tr>
+      <tr><td class="bold">官方硬指标「空间音频」</td><td>三队全无</td><td>逐柱定位 + 指向性 + 距离衰减 + 混响</td><td><span class="pill pill-best">独占</span></td></tr>
+      <tr><td class="bold">只有 XR 能做？</td><td>否（八成可复现）</td><td>是（声音的方向性在 2D 屏上不存在）</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">评委能亲手参与？</td><td>否（线性点击流程）</td><td>是（转身找声源 / 绕到柱背）</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">依赖后端 / 账号 / 网络</td><td>全部依赖（匹配服务 / LLM / 任务系统）</td><td>全部不依赖，断网照常跑</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">概念图 vs 实际落地</td><td>三张全是 AI 生成图，预期被顶得很高</td><td>用真实运行截图当概念图</td><td><span class="pill pill-good">我们稳</span></td></tr>
+      <tr><td class="bold">美术 / 音效 / 视频</td><td>各有专人（我们已决定不加入）</td><td>一个人扛：贴图自烘焙 + 空间音源自做 + H3 出片</td><td><span class="pill pill-warn">他们赢</span></td></tr>
+      <tr><td class="bold">团队叙事</td><td>4 人团队，资源占优</td><td>单人：可能被问「一个人做的？」</td><td><span class="pill pill-warn">他们赢</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">路演一句话（不点名任何队伍）</span>
+    「市面上有的是 AI 驱动的空间应用。我们做的是<strong>让声音变成一栋能走进去的建筑</strong> —— 你绕过它背面，声音真的会变。这件事在屏幕上永远做不到。」
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 03 作品机制                                                    -->
+<!-- ============================================================ -->
+<section class="content" id="sec-3">
+  <div class="sec-head"><span class="section-num">CHAPTER 03 · 机制</span>
+  <h2 class="section">作品机制与「显影」开场</h2>
+  <div class="section-line"></div></div>
+
+  <div class="dir-hero">
+    <div class="glyph">♪</div>
+    <div class="body">
+      <div class="en">SONOSPHERE</div>
+      <h3>声之建筑</h3>
+      <p class="oneline">听见的每一秒，在空间里长出会发声的建筑。</p>
+      <p>一段 60 秒的声音被切成 24 片，绕着你立成 24 根柱子。柱子越高，那一刻的能量越强；每根柱子都是一个真实声源，<strong>你绕着建筑走，声音也跟着转</strong>。</p>
+    </div>
+  </div>
+
+  <h3><span class="num">3.1</span>基本映射</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">输入 / 元素</th><th style="width:30%">映射</th><th>评委能读出什么</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">60 秒真实音频</td><td>切成 <strong>24 片</strong>（每片 2.5 秒）</td><td>时间有结构了——不是一条连续的流，是可以被「立起来」的 24 个瞬间</td></tr>
+      <tr><td class="bold">一根柱子</td><td>= 一片（24 根，等角分布成环，半径 1.6 m）</td><td>「一根柱子 = 一秒」——路演首句就说清</td></tr>
+      <tr><td class="bold">柱高</td><td>= 该片总能量（0.15 – 1.4 m）</td><td>响的地方高，静的地方矮 —— 建筑的轮廓就是这段声音的动态</td></tr>
+      <tr><td class="bold">柱色</td><td>= 频谱重心：低频深琥珀 / 中频橙 / 高频冷白</td><td>不用看数据也能感到「这段声音是沉的还是脆的」</td></tr>
+      <tr><td class="bold">柱面纹理</td><td>= 该片 24 频带能量的竖条（128 列 → 24 格，烘焙进贴图）</td><td>凑近看，每根柱子内部也有结构 —— 细节是「真做出来的」的信号</td></tr>
+      <tr><td class="bold">柱顶标签</td><td>= 时间码 / 频段 / 响度 dB</td><td>可读 = 可讨论。评委能指着某根柱问「这段是什么」</td></tr>
+      <tr><td class="bold">地面光环</td><td>同心光环 = 时间轴，当前播放位置那圈亮起</td><td>「现在听到的是第几秒」——空间化的进度条</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="sec-3-1"><span class="num">3.2</span>建筑感的三层（缺一层就退化成「声音可视化」）</h3>
+
+  <p>「把声音画成柱子」本身并不稀奇，任何频谱可视化都能做。<strong>让它成为「建筑」的，是下面三层叠起来。</strong></p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:14%">层</th><th style="width:34%">手段</th><th style="width:22%">评委感知</th><th>为什么这一层不可省</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">几何层</td><td>Stage 沉浸场景 + 24 柱环形 + 地面声呐光环 + 暗场</td><td>「我站在一圈柱子中间」</td><td>只有 Stage 能让声源绕着你走；窗口体放不下这个环</td></tr>
+      <tr><td class="bold">指向层</td><td><code>Directivity(pattern, sharpness)</code> 逐柱不同</td><td>「我绕到这根柱子后面，它变闷了」</td><td><strong>这是「声音真的在那个位置」最省力也最难反驳的证明</strong>——不是音效在循环，是有方向的声源</td></tr>
+      <tr><td class="bold">混响层</td><td><code>reverbVolume</code> + <code>AudioMixerGroupResource.setVolume()</code></td><td>「整个空间的大小 / 材质在变」</td><td>同一个声音换个混响 = 换了个房间。这一层直接命中「建筑」的语义</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">指向层的额外收益</span>
+    让<strong>低频柱用更全向的 pattern、高频柱用更聚焦的</strong>，评委就能听出这是两套不同的空间线索：低频包裹感强、高频定位感极强。
+    这是零成本的设计判断，但听起来立刻「专业」。
+  </div>
+
+  <h3><span class="num">3.3</span>开场仪式：把「显影」做成一个参数</h3>
+
+  <p>官方 Stage 有四种 style，其中 <strong>Progressive</strong> 可以用 <code>immersion</code>（0–100）连续调节「真实环境透传」与「虚拟场景」的比例：</p>
+
+  <div class="codeblock">immersion = 0    →  几乎纯真实房间，虚拟实体不可见
+immersion = 50   →  真实环境与虚拟场景各占一半（真实环境的光照仍来自 VST）
+immersion = 100  →  等价于 Full：纯虚拟场景，真实环境被完全遮住</div>
+
+  <div class="insight">
+    <span class="label">这就是「显影」本身</span>
+    <strong>immersion 从 0 推到 100：你眼前的客厅像一张照片在显影液里慢慢浮出，变成由声音构成的建筑。</strong>
+    <br><br>
+    <strong>不需要任何模型、贴图或动画资产</strong>——只需要一个参数在 6 秒内推过去。这是零资产成本、零外部依赖、且在模拟器上就能验收的戏剧性开场。
+  </div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:38%">manifest 配置项</th><th style="width:14%">取值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>pico.spatial.stage.id</code></td><td class="c">SONOSPHERE</td><td>默认 Stage 的唯一名</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.style</code></td><td class="c">待实测</td><td>Progressive 对应的数字枚举 —— 文档只给了名字（Automatic / Mixed / Progressive / Full），<strong>没给数字</strong>。W1 第一天必须四个取值各试一遍</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion</code></td><td class="c">50</td><td>默认沉浸度；开场动画从 0 推到 100</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_min</code></td><td class="c">0</td><td>下限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_max</code></td><td class="c">100</td><td>上限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.upperlimb</code></td><td class="c">1</td><td>上肢可见 —— 交互时手在画面里是加分项</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">退路（必须提前想好）</span>
+    若 Progressive 在模拟器上不可用或表现不对，退路是 <strong>Mixed + 自做一个内翻的暗色天球</strong>盖住 VST，再用贴图与自发光压出暗场。视觉上仍有「暗房 / 显影」的语汇，只是失去「真实房间被吞掉」那一层戏剧性。<strong>这条退路不依赖任何新 API。</strong>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 04 空间音频引擎                                                -->
+<!-- ============================================================ -->
+<section class="content" id="sec-4">
+  <div class="sec-head"><span class="section-num">CHAPTER 04 · 引擎</span>
+  <h2 class="section">空间音频引擎（官方 API 核对）</h2>
+  <div class="section-line"></div></div>
+
+  <p class="lead">本章每一个 API 名与参数都来自本机 PICO SDK 6.1 的 <code>agent-vault</code> 官方文档（<code>com.pico.spatial.core.ecs.audio</code> / <code>com.pico.spatial.audio</code>），<strong>不是凭记忆写的</strong>。底层用 <strong>HRTF</strong> 渲染：「models the acoustic characteristics of the human ear based on HRTF」。</p>
+
+  <div class="insight">
+    <span class="label">为什么这一章最重要</span>
+    空间音频是<strong>核心 SDK 能力</strong>，不是实验性 API —— 不需要 <code>pico.spatial.use_experimental_api</code>，<strong>不要求 PICO OS 6</strong>，不依赖 SpatialML。
+    这意味着它的真机门槛比「拍照变山」那条路低得多（那条要 OS 6，4 Ultra 是 OS 5）。
+  </div>
+
+  <h3 id="sec-4-1"><span class="num">4.1</span>API 清单与参数</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:30%">API</th><th style="width:12%">包</th><th>用途与关键参数</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold"><code>AudioResource.load(name, "asset://xxx.wav", LoadType.FROM_ASSETS)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>从 assets 加载音频资源</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>ObjectAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><strong>声源绑实体</strong>：<code>volume</code>（总音量）、<code>Directivity(pattern, sharpness)</code>（指向性）、<code>distanceAttenuationMode</code>（距离衰减）、<code>reverbVolume</code>（混响音量）。位置或朝向变化时自动调整输出</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>Directivity(pattern, sharpness)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><code>pattern</code> = 0 全向 → 0.5 心形 → 1 八字形；<code>sharpness</code> = 聚焦程度。<strong>绕到柱背面声音变闷就是它</strong>，官方内建，不用自己做遮挡</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>DistanceAttenuationMode</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><code>INVERSE_SQUARED</code>（默认，按距离平方反比衰减）/ <code>FIXED</code>（恒定）。<strong>柱阵缩放时能听出变远变近</strong></td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AmbientAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>环境床（房间底噪）—— 让「空间」听起来不空</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>ChannelAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>通道音（副窗反馈音等）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>entity.prepareAudio(resource)</code> / <code>entity.playAudio(resource)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>拿到 <code>AudioPlayerController</code>，控制 <code>play() / pause() / stop()</code></td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioEvents</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><strong>按播放时间点触发自定义回调</strong> ⇒ 音画同步交给系统，不自己算进度</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioMixerGroupsComponent</code> + <code>AudioMixerGroupResource.setVolume()</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>统一控制一组资源的音量 / 混响（做交叉淡入淡出、避免爆音）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioResourceLibraryComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>以字典方式批量增删查 24 份资源</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioGroupResource</code> + <code>AudioGroupResourcePlayMode</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>资源集合按播放模式随机选一个 —— 做「随机环境声」很好用</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioResourceConfig(mixerGroupID, ambisonicsType, ...)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>资源配置，<strong>含 AmbisonicsType</strong>（360° 音频）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>SpatialAudioTrackExtension</code></td>
+        <td class="c">spatial.audio</td>
+        <td>给第三方播放器接空间音频：<code>SpatialAudioMode.OBJECT / AMBIENT</code>，支持 <code>attachToEntity</code>（绑 3D 物体）或 <code>attachToContainer</code>（绑窗口）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">4.2</span>核心代码骨架</h3>
+
+  <p>柱子实体<strong>就是</strong>声源 —— <code>ObjectAudioComponent</code> 直接挂在柱子的 Entity 上。这样柱阵旋转 / 缩放时，<strong>声音位置自动跟着走</strong>，不需要任何额外同步代码。</p>
+
+  <div class="codeblock">// 柱子 = 声源
+val column = Entity()
+column.components.set(
+    ObjectAudioComponent(
+        volume = 1.0f,
+        Directivity(pattern = 0.35f, sharpness = 0.60f),
+        distanceAttenuationMode = DistanceAttenuationMode.INVERSE_SQUARED,
+        reverbVolume = 0.5f
+    )
+)
+val player = column.prepareAudio(audioResource)   // AudioPlayerController
+player.play()</div>
+
+  <p>官方文档给出的等价写法（第三方的 <code>AudioTrack</code> / <code>ExoPlayer</code> / <code>MediaPlayer</code> 也能接）：</p>
+
+  <div class="codeblock">val extension = SpatialAudioTrackExtension()
+extension.spatialAudioTrackExtensionConfig(
+    mode = SpatialAudioMode.OBJECT,
+    isAmbisonic = false,
+    builder = audioTrackBuilder
+)
+extension.attachToEntityWithBuilder(targetEntity, audioTrackBuilder)
+val audioTrack = audioTrackBuilder.build()</div>
+
+  <h3><span class="num">4.3</span>声源策略</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>24 柱 = 24 个潜在声源</b>但<strong>同时只激活能量最高的 4 个</strong>。理由有两条：一是性能（24 路空间化渲染 + 衰减计算）；二是听感清晰（同时响 24 个会糊成一片，评委反而听不出方向）。</div>
+    <div class="spec a"><b>声源实体即柱子</b><code>ObjectAudioComponent</code> 挂在柱 Entity 上 ⇒ 柱阵变换时声音位置自动跟随，无需同步代码。</div>
+    <div class="spec b"><b>资源统一管理</b>24 段音频用 <code>AudioResourceLibraryComponent</code> 管理；播放头推进靠 <code>AudioEvents</code>。</div>
+    <div class="spec b"><b>切换要交叉淡化</b>换声源时用 <code>AudioMixerGroupResource.setVolume()</code> 做淡入淡出，否则会出现爆音 —— 爆音在评委的耳朵里是致命的。</div>
+    <div class="spec c"><b>不做实时麦克风采集</b>输入是文件回放。理由：模拟器无麦克风；回放可复现、可调试、可在提交包内自洽（不依赖任何授权）。</div>
+    <div class="spec c"><b>频段决定指向性</b>低频柱 pattern 更全向（包裹感），高频柱 pattern 更聚焦（定位感）。零成本，但听起来立刻专业。</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">六维预估：声之建筑 vs 曝光暗房</div>
+    <div class="chart-sub">声之建筑的优势集中在「创新」与「交互体验」两维 —— 前者来自独占空间音频硬指标，后者来自评委可亲身参与。</div>
+    <div class="chart-wrap short"><canvas id="ch-score"></canvas></div>
+  </div>
+
+  <div class="insight">
+    <span class="label">官方样例工程是最快的启动路径</span>
+    官方「<strong>Create immersive spatial audio</strong>」样例的完整结构是：<code>DefaultStage</code> + Planar 控制面板 + 环境音 + 移动声源，源码在 <code>app/src/main/java/com/pico/spatial/sample/spatialaudio/</code>：
+    <code>Main.kt</code>（声明 Stage 与控制面板）/ <code>ui/ImmersiveScene.kt</code> / <code>ui/AudioControlViewModel.kt</code> / <code>data/AudioResourceStore.kt</code> / <code>manager/AudioPlayer.kt</code> / <code>ecs/FlyTrajectory.kt</code>。
+    <br><br>
+    <strong>进官方群时务必问一句：能否提供这个样例工程。</strong>拿到它等于拿到本方向的地基。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 05 场景 · 交互 · 多窗口                                          -->
+<!-- ============================================================ -->
+<section class="content" id="sec-5">
+  <div class="sec-head"><span class="section-num">CHAPTER 05 · 场景</span>
+  <h2 class="section">场景 · 交互 · 多窗口</h2>
+  <div class="section-line"></div></div>
+
+  <h3><span class="num">5.1</span>场景与视觉系统</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">项</th><th style="width:34%">规格</th><th>为什么这么定</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">场景</td><td><strong>Stage 沉浸场景</strong>（不是窗口），style = Progressive，开场 immersion 0→100 推满</td><td>只有 Stage 能让声源绕着你走</td></tr>
+      <tr><td class="bold">柱体</td><td>八棱柱（比圆柱便宜，棱面在暗光下更出体积），底面固定在半径 1.6 m 的圆上</td><td>八棱柱有明确棱线，暗场里轮廓更硬朗</td></tr>
+      <tr><td class="bold">柱高</td><td>0.15 – 1.4 m，随该时间片能量线性映射</td><td>能量差异要肉眼可辨，否则「建筑」变成「栅栏」</td></tr>
+      <tr><td class="bold">配色</td><td>频段着色：低频深琥珀 / 中频橙 / 高频冷白。<strong>明暗与光照烘进贴图</strong></td><td>顶点色与方向光对自定义网格无效（已实测），必须烘焙</td></tr>
+      <tr><td class="bold">柱面纹理</td><td>24 频带能量竖条（128 列 → 24 格）</td><td>凑近看有细节 —— 「真做出来的」的可信信号</td></tr>
+      <tr><td class="bold">地面</td><td>半径 2.2 m 暗色圆盘，烘一圈同心光环（声呐），当前播放位置那圈亮起</td><td>空间化的进度条，比平面进度条更直觉</td></tr>
+      <tr><td class="bold">环境</td><td>暗场压到 12%，只有柱体与光环自发光</td><td>空间音频的听感依赖「没有别的东西分散注意力」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">视觉上的战略选择</span>
+    竞品三队的概念图全是<strong>高亮玻璃面板 + 浅灰 + 青绿</strong>（AI 出图最泛滥的风格）。<strong>我们反着来</strong> —— 深墨 + 琥珀 + 暗场。
+    这是四份材料里唯一的暗色系，辨识度直接拉满；而且暗场是空间音频听起来「就在耳边」的前提，审美与技术在这里是同一件事。
+  </div>
+
+  <h3><span class="num">5.2</span>交互清单（每条写死「可见反馈 + 降级路径」）</h3>
+
+  <p class="lead" style="margin-bottom:12px">规则：<strong>每个动作都必须有立刻可见的变化</strong>，且<strong>每个动作都必须有不用手势的降级路径</strong>。手势在真机验收之前，模拟器只保证「不崩、能自动演出」。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:14%">交互</th><th style="width:22%">动作</th><th style="width:32%">可见反馈（缺一不可）</th><th>降级路径</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">聚拢</td><td>五指捏合 / 双手合拢</td><td>柱高压到 20%、半径收到 0.6 m、光晕收缩 —— <strong>形变必须肉眼可辨</strong>，不能只换颜色</td><td>主窗底部按钮「聚拢 / 展开」</td></tr>
+      <tr><td class="bold">划过</td><td>手指横切过某根柱</td><td>该柱亮起 + 其余 23 根降到 25% 亮度 + 顶部弹出标签（时间 / 频段 / 响度）</td><td>副窗 1 频谱环上点对应扇区</td></tr>
+      <tr><td class="bold">转盘</td><td>单手绕圈拖动</td><td>整个环旋转，柱子擦过你的位置；<strong>经过正前方的柱子时该柱音轨被提亮</strong></td><td>副窗 3 的方向拨盘</td></tr>
+      <tr><td class="bold">缩放</td><td>双手开合</td><td>环半径在 0.8–2.4 m 之间连续变化，柱距同步改变；<strong>距离衰减随之变化（能听出变远变近）</strong></td><td>副窗 3 滑杆</td></tr>
+      <tr><td class="bold">长按</td><td>按住柱顶 0.6 s</td><td>柱体炸开成 24 个小方块（频段分块），每块悬浮成一个可读标签</td><td>副窗 2「ROOM TONE」列表</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">自动演出模式（强制要求）</span>
+    无人操作时，柱阵必须自己动：启动后自动播放、自动按能量呼吸、自动缓慢旋转 360°（每 20 秒一圈）、自动轮换 4 个活跃声源。
+    <strong>评委戴上头显的那一刻，画面不能是静止的。</strong>
+    这一条与「启动即自动铺开四窗」是同一条工程原理：<strong>演示不依赖任何一次点击。</strong>
+  </div>
+
+  <h3><span class="num">5.3</span>多窗口设计（Stage + 3 Planar）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:24%">窗口</th><th style="width:12%" class="c">形态</th><th style="width:30%">内容</th><th>作用</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">Stage · SONOSPHERE</td><td class="c"><strong>Stage</strong></td><td>环形柱阵 + 地面光环 + Progressive 显影开场</td><td>作品本体</td></tr>
+      <tr><td class="bold">副窗 1 · SPECTRUM RING</td><td class="c">Planar</td><td>24 段频谱环，实时对应当前播放位置的能量</td><td>把「听觉」翻译成「视觉」，也是副窗 3 的锚点</td></tr>
+      <tr><td class="bold">副窗 2 · TIMELINE</td><td class="c">Planar</td><td>60 秒波形时间轴 + 24 个时间片标记 + 文字转录</td><td>让「这一分钟」有可读的时间结构</td></tr>
+      <tr><td class="bold">副窗 3 · ROOM TONE</td><td class="c">Planar</td><td>声源列表（哪根柱在响、多响）、混响参数、指向性参数、开关</td><td>把空间音频「工程化可见」，命中功能设计维度</td></tr>
+    </tbody>
+  </table>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>四个独立空间表面</b>Stage + 3 个 WindowContainer，共享 <code>SessionBus</code>（已有工程，零改动复用）。官方硬指标「多窗口」不只是及格线，是评分维度里的交互体验基础。</div>
+    <div class="spec b"><b>副窗不是装饰</b>三层信息 = 频谱（听觉的视觉翻译）/ 时间（可读结构）/ 声学（工程参数可见）。这是「功能设计 25 分」的抓手。</div>
+    <div class="spec c"><b>Stage 的额外好处</b>沉浸场景可以把真实房间纳入构图 —— Progressive 推到 100 之前，观众是在自己的客厅里看柱子长出来。</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 06 音频内核与素材                                              -->
+<!-- ============================================================ -->
+<section class="content" id="sec-6">
+  <div class="sec-head"><span class="section-num">CHAPTER 06 · 内核</span>
+  <h2 class="section">音频内核与素材</h2>
+  <div class="section-line"></div></div>
+
+  <h3><span class="num">6.1</span>音频内核：与影像内核同构</h3>
+
+  <p>新建 <code>app/audio-core/</code>——<strong>纯 Kotlin、零 Android 依赖</strong>，与 <code>imaging-core</code> 一样可在 PC 侧跑单测。分层照抄影像内核的写法：</p>
+
+  <div class="codeblock">AudioFrame (PCM)  →  SpectrumAnalyzer  →  EnergyField(24×24)
+                  →  ColumnLayout  →  (Stage 实体 + 声源)</div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:26%">层</th><th style="width:38%">做什么</th><th>输出与验收</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>AudioFrame</code></td><td>PCM 帧容器（样本率 / 声道 / 时间戳）</td><td>与影像内核的 <code>Frame</code> 同构</td></tr>
+      <tr><td class="bold"><code>SpectrumAnalyzer</code></td><td>分帧 + 梅尔频谱</td><td>60 s → 24 段，每段 24 个频带 ⇒ <strong>24 × 24 能量矩阵</strong></td></tr>
+      <tr><td class="bold"><code>EnergyField</code></td><td>每段特征量提取</td><td>总能量 / 频谱重心 / 瞬态密度 / 高频占比 / <strong>房间感指标</strong></td></tr>
+      <tr><td class="bold"><code>RoomTone</code></td><td>房间感指标计算</td><td>频谱平坦度 + 高频衰减斜率的组合。混响多、空间大的录音给出不同的值 ⇒ 直接映射到 <code>reverbVolume</code> 与柱体「材质」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">单测（≥12 条，镜像影像内核的测试风格）</span>
+    静音输入全零 · 纯正弦的重心正确 · 脉冲串的瞬态密度正确 · 削波输入不越界 · 立体声左右不平衡的处理 · 时长边界（不足 / 超出 24 片）· 分段边界不重复不丢样 · 矩阵维度恒定 ……<br>
+    <strong>这是「完成度 10 分」与原创性护栏的共同证据</strong> —— 公开仓库里能跑绿的测试，比任何自述都有说服力。
+  </div>
+
+  <h3><span class="num">6.2</span>素材清单：需要 hommi 提供什么</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:8%" class="c">#</th><th style="width:24%">素材</th><th style="width:44%">要求</th><th style="width:12%" class="c">截止</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="c bold">1</td><td class="bold">60 秒音频（主）</td><td>手机录即可。<strong>首选：朗读一段文字</strong> —— 语速自然、有呼吸、有情绪起伏，柱子会长得不一样</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">2</td><td class="bold">60 秒音频（备 A）</td><td>城市街道（车、人、雨、施工）</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">3</td><td class="bold">60 秒音频（备 B）</td><td>雨夜窗边</td><td class="c">11.12</td></tr>
+      <tr><td class="c bold">4</td><td class="bold">可选：对应的文字稿</td><td>朗读类必给，显示在副窗 2。文字让「声音」有了语义，评委更容易记住</td><td class="c">11.12</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">6.3</span>录音指导（决定成败）</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>✅ 要有强起伏</b>说话、脚步、开关门、远处雷声 —— 起伏越大，柱高差异越大，视觉越有故事</div>
+    <div class="spec a"><b>✅ 在真实空间里录</b>客厅 / 走廊 / 楼道 —— 空间混响本身就是我们要分析的「房间感指标」</div>
+    <div class="spec b"><b>❌ 不要纯音乐</b>音乐频谱过于平稳，柱子会长得一样，视觉就没戏</div>
+    <div class="spec b"><b>❌ 不要持续噪声</b>雨声、空调声全程一样 ⇒ 24 根柱子几乎等高，「建筑」变成「栅栏」</div>
+    <div class="spec c"><b>📱 设备不限</b>手机录即可。要求只有两条：<strong>时长 60 秒</strong>、<strong>没有背景音乐</strong></div>
+    <div class="spec c"><b>🔒 合规</b>只用自己录的声音。街道录音避免拍到可识别人脸与清晰对话</div>
+  </div>
+
+  <div class="takeaway"><span class="icon">✓</span><span><strong>零外部素材</strong>——无模型下载、无 3D 资产、无第三方图库、无 Tripo API。这是本方向相对「指尖造物」的最大优势：<strong>没有拿不到就做不完的环节</strong>。</span></div>
+
+  <h3><span class="num">6.4</span>从音频到建筑的完整数据链</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">阶段</th><th style="width:36%">数据形态</th><th>落到画面 / 声音上的东西</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">PCM</td><td>60 s × 采样率 × 声道</td><td>原始素材</td></tr>
+      <tr><td class="bold">分帧</td><td>24 片 × 2.5 s</td><td>24 根柱子的存在</td></tr>
+      <tr><td class="bold">梅尔频谱</td><td>24 × 24 能量矩阵</td><td>柱高（行能量）+ 柱色（列重心）+ 柱面纹理（整行）</td></tr>
+      <tr><td class="bold">特征量</td><td>重心 / 瞬态 / 房间感</td><td>柱色、材质、<code>reverbVolume</code>、<code>Directivity</code> 的 pattern</td></tr>
+      <tr><td class="bold">音频事件</td><td>时间点回调</td><td>当前柱点亮、地面光环推进、活跃声源切换</td></tr>
+      <tr><td class="bold">空间音频</td><td>HRTF 渲染</td><td>你转头时，声音真的从那个方向来</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">这张表就是路演的技术骨架</span>
+    评委问「这到底是怎么做的」，答案就在这张链路上：<strong>一段真实录音 → 24×24 频谱矩阵 → 24 根柱子 → 4 个 HRTF 声源</strong>。
+    每一步都可验证、可复现、不可被「AI 生成的通用方案」四个字盖过去。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 07 硬指标 · 排期 · 风险 · 评分                                  -->
+<!-- ============================================================ -->
+<section class="content" id="sec-7">
+  <div class="sec-head"><span class="section-num">CHAPTER 07 · 落地</span>
+  <h2 class="section">硬指标 · 排期 · 风险 · 评分</h2>
+  <div class="section-line"></div></div>
+
+  <h3><span class="num">7.1</span>官方硬指标命中表</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:20%">官方硬指标</th><th style="width:12%" class="c">命中</th><th>兑现方式</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">多窗口<span class="pill pill-ok" style="margin-left:6px">基本要求</span></td><td class="c"><span class="pill pill-best">强命中</span></td><td>Stage + 3 个 Planar 窗口，共享 SessionBus；副窗不是装饰，是频谱 / 时间 / 声学三层信息</td></tr>
+      <tr><td class="bold">3D 内容</td><td class="c"><span class="pill pill-best">强命中</span></td><td>24 根八棱柱 + 地面圆盘，自拼 MeshModel，环形建筑有真实体积</td></tr>
+      <tr><td class="bold">空间交互</td><td class="c"><span class="pill pill-good">命中</span></td><td>聚拢 / 划过 / 转盘 / 缩放 / 长按 5 组，每组都有可见形变 + 按钮降级 + 自动演出模式</td></tr>
+      <tr><td class="bold">空间音频</td><td class="c"><span class="pill pill-best">最强命中</span></td><td>逐柱 ObjectAudioComponent 定位 + Directivity 指向性 + 距离衰减 + reverbVolume + AudioEvents 音画同步。<strong>竞品三队全部没做这一条</strong></td></tr>
+      <tr><td class="bold">MR</td><td class="c"><span class="pill pill-best">强命中</span></td><td>Stage style = Progressive，immersion 0→100 把真实房间「显影」成建筑 —— 三者中唯一真·混合现实的表达</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">7.2</span>六周排期（单人，11.08 – 12.19）</h3>
+
+  <table class="gantt">
+    <thead><tr><th class="wk">任务</th><th>W1 11.08–14</th><th>W2 11.15–21</th><th>W3 11.22–28</th><th>W4 11.29–12.05</th><th>W5 12.06–12.12</th><th>W6 12.13–19</th></tr></thead>
+    <tbody>
+      <tr><td class="lbl"><b>Stage 改造</b> DefaultStage + manifest 四项 meta-data + style 枚举实测</td>
+        <td><div class="track"><div class="bar a" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar a" style="width:25%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>音频内核</b> audio-core：解码 + 24×24 梅尔频谱 + 房间感（带单测）</td>
+        <td><div class="track"><div class="bar b" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar b" style="width:40%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>柱阵</b> 网格生成 + 高度/配色/纹理烘焙 + 显影开场</td>
+        <td><div class="track"><div class="bar a" style="width:30%"></div></div></td>
+        <td><div class="track"><div class="bar a" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar a" style="width:50%"></div></div></td>
+        <td><div class="track"><div class="bar a" style="width:25%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>空间音频</b> ObjectAudioComponent × 4 + Directivity + AudioEvents</td>
+        <td><div class="track"></div></td>
+        <td><div class="track"><div class="bar b" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar b" style="width:40%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>三副窗</b> 频谱环 / 时间轴 / 声学参数 + SessionBus</td>
+        <td><div class="track"></div></td>
+        <td><div class="track"><div class="bar c" style="width:25%"></div></div></td>
+        <td><div class="track"><div class="bar c" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar c" style="width:40%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>手势 + 自动演出</b> 5 组交互与全部降级路径</td>
+        <td><div class="track"></div></td>
+        <td><div class="track"></div></td>
+        <td><div class="track"><div class="bar d" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar d" style="width:60%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>门槛补齐</b> 30 分钟稳定性压测 + 交包脚本 + APK sha256 ↔ Commit</td>
+        <td><div class="track"><div class="bar a" style="width:100%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>交包闸门</b> 11.25 通道开即交完整可安装包</td>
+        <td><div class="track"></div></td>
+        <td><div class="track"></div></td>
+        <td><div class="track"><div class="bar b" style="width:20%"></div></div></td>
+        <td><div class="track"></div></td><td><div class="track"></div></td><td><div class="track"></div></td></tr>
+      <tr><td class="lbl"><b>打磨 / 开源 / 路演稿 / 演示片</b></td>
+        <td><div class="track"></div></td>
+        <td><div class="track"></div></td>
+        <td><div class="track"><div class="bar c" style="width:30%"></div></div></td>
+        <td><div class="track"><div class="bar c" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar c" style="width:100%"></div></div></td>
+        <td><div class="track"><div class="bar c" style="width:60%"></div></div></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">排期说明</span>
+    <strong>W1 把「30 分钟稳定性压测」与「交包脚本」放进去，是因为这两件事与方向选择无关</strong>，先做完就不用返工。<br>
+    <strong>空间音频放在 W2</strong>，是因为它依赖 Stage 里柱子的最终坐标 —— 坐标不定下来，声源就没地方挂。<br>
+    <strong>11.25 交包闸门在 W3</strong>：通道一开就交完整可安装包，之后持续更新到 12.19 09:00 锁版。
+  </div>
+
+  <h3><span class="num">7.3</span>风险表</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:28%">风险</th><th style="width:9%" class="c">概率</th><th style="width:9%" class="c">影响</th><th>对策与止损线</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">拿不到真机 / 11.22 前验不出空间音频听感</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-bad">高</span></td><td>W1 即向官方群索取设备型号、预约窗口与空间音频样例包；<strong>止损：11.22 切方向 D</strong></td></tr>
+      <tr><td class="bold">Stage 改造影响现有四窗口工作台</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>副窗不动，只换默认容器；改完立刻回归「四表面同框」自检</td></tr>
+      <tr><td class="bold"><code>stage.style</code> 数字枚举与文档不符</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>W1 第一天把 4 个取值各试一遍；Progressive 不可用则退到 Mixed + 暗色天球</td></tr>
+      <tr><td class="bold">24 个声源性能 / 音频延迟</td><td class="c"><span class="pill pill-ok">低</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>同时只激活 4 个；W2 用合成音频先压测</td></tr>
+      <tr><td class="bold">手势真机失效</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>每组交互都有按钮 / 副窗降级；自动演出模式保证「不操作也在动」</td></tr>
+      <tr><td class="bold">录音素材平淡，柱子长得一样</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>录三条不同类型对比；朗读类自带语义起伏，最保险</td></tr>
+      <tr><td class="bold">评委看不懂「柱子代表什么」</td><td class="c"><span class="pill pill-warn">中</span></td><td class="c"><span class="pill pill-ok">中</span></td><td>副窗 1 频谱环做一一对应映射；路演首句就说清「一根柱子 = 一秒」</td></tr>
+      <tr><td class="bold">音频文件授权 / 隐私</td><td class="c"><span class="pill pill-ok">低</span></td><td class="c"><span class="pill pill-ok">低</span></td><td>只用 hommi 自己录制的声音；街道录音避免可识别人脸</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">7.4</span>六维评分预估</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">维度</th><th style="width:10%" class="c">满分</th><th style="width:10%" class="c">预估</th><th>判断依据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">创新</td><td class="c">25</td><td class="c bold">24</td><td>「声音即建筑」概念清晰；<strong>且是四方向里唯一命中竞品全缺硬指标的</strong>。扣分点是概念本身仍属「把 A 映射成 B」型创新</td></tr>
+      <tr><td class="bold">功能设计</td><td class="c">25</td><td class="c bold">22</td><td>频谱 / 时间 / 声学三层信息 + 5 组交互 + 可调指向性 / 混响 / 衰减，闭环完整</td></tr>
+      <tr><td class="bold">界面视觉</td><td class="c">15</td><td class="c bold">14</td><td>暗场 + 环形柱阵 + Progressive 显影开场 + 频段配色，四份材料里唯一暗色系，辨识度强</td></tr>
+      <tr><td class="bold">交互体验</td><td class="c">15</td><td class="c bold">14</td><td>有身体参与、有指向性惊喜、能听见空间变化；扣分点是手势真机未验</td></tr>
+      <tr><td class="bold">完成度</td><td class="c">10</td><td class="c bold">8</td><td>四表面 + 内核 + 工具链齐备；扣分点是真机未验、稳定性未跑</td></tr>
+      <tr><td class="bold">路演</td><td class="c">10</td><td class="c bold">9</td><td>一句话可说清、10 秒有反应点、<strong>音频自证「在现场」</strong></td></tr>
+      <tr><td class="bold"><strong>合计</strong></td><td class="c bold">100</td><td class="c bold" style="color:var(--accent)">91</td><td><strong>四方向第一，领先 D 4–5 分</strong>。仍要诚实：91 是上限估计，真机未验前应按 <strong>85–88</strong> 折算</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 08 执行落地与决策                                              -->
+<!-- ============================================================ -->
+<section class="content" id="sec-8">
+  <div class="sec-head"><span class="section-num">CHAPTER 08 · 执行</span>
+  <h2 class="section">执行落地与决策</h2>
+  <div class="section-line"></div></div>
+
+  <h3><span class="num">8.1</span>工程复用 vs 重做</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">类别</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">直接复用<br><span class="pill pill-ok">零改动</span></td><td>四窗口机制 + <code>SessionBus</code> + 贴图烘焙管线 + <code>MeshResource</code> 打包流程 + 模拟器工具链（pico-cli / adb / 截图）+ APK 构建安装链路 + 交包脚本 + <strong>42 个内核单测的测试基建与写法</strong></td></tr>
+      <tr><td class="bold">骨架复用<br><span class="pill pill-good">换实现</span></td><td><code>imaging-core</code> 的<strong>架构骨架</strong>：<code>Frame → Analyzer → Field → MeshBuilder → MeshModel</code>。音频侧照抄这套分层：<code>AudioFrame → SpectrumAnalyzer → EnergyField → ColumnMeshBuilder</code>。<strong>§4 原稿说「可以扔掉影像内核」说重了 —— 扔的是语义，不是骨架</strong></td></tr>
+      <tr><td class="bold">需要新写</td><td>音频解码 + 梅尔频谱分析器 + 柱阵网格生成器 + <code>ObjectAudioComponent</code> 接入 + <code>AudioEvents</code> 同步 + 三个副窗的新内容</td></tr>
+      <tr><td class="bold">不再需要</td><td>影像内核的直方图 / 曝光缺陷判据（曝光山脉、缺陷语义色、地形 hillshade 全部停用）</td></tr>
+      <tr><td class="bold">工作量估算</td><td>新写 <strong>18–22 人日</strong>（不含稳定性压测与打磨）。6 周 = 30 个工作日，缓冲 <strong>8–12 天</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="sec-8-1"><span class="num">8.2</span>目标文件结构与第一周逐日拆解</h3>
+
+  <div class="codeblock">app/
+├── audio-core/                       ← 新增（纯 Kotlin，零 Android 依赖）
+│   └── src/main/kotlin/com/spatialcoach/audio/core/
+│       ├── AudioFrame.kt             ← PCM 帧
+│       ├── SpectrumAnalyzer.kt       ← 梅尔频谱 + 24 段能量矩阵
+│       ├── EnergyField.kt            ← 24×24 矩阵 + 每段特征
+│       └── RoomTone.kt               ← 房间感指标
+├── app/src/main/java/com/spatialcoach/sonosphere/
+│   ├── platform/                     ← SpatialApplication / LaunchActivity（Stage 改造）
+│   ├── stage/                        ← Stage 内容
+│   │   ├── SonosphereStage.kt        ← DefaultStage { ... }
+│   │   ├── ColumnRing.kt             ← 24 柱 ECS 实体 + 柱阵变换
+│   │   ├── ColumnMeshBuilder.kt      ← 八棱柱网格
+│   │   └── BakedTexture.kt           ← 频段配色 + 频带条纹 + 明暗烘焙
+│   ├── audio/
+│   │   ├── SpatialAudioDirector.kt   ← 4 个 ObjectAudioComponent 声源调度
+│   │   ├── AudioEventBridge.kt       ← AudioEvents → 视觉回调
+│   │   └── AudioLibrary.kt           ← AudioResourceLibraryComponent + 24 资源
+│   ├── content/                      ← 三个副窗（频谱环 / 时间轴 / 声学参数）
+│   └── interaction/                  ← 5 组手势 + 降级路径
+└── app/src/main/assets/audio/        ← hommi 的 60 秒 wav（切成 24 段）</div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:10%">日程</th><th style="width:30%">做什么</th><th style="width:26%">产出</th><th>完成判据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">Day 1</td><td>Stage 改造：manifest 四项 meta-data + <code>mainApp</code> 里 <code>DefaultStage { }</code>；<strong>把 4 个 <code>stage.style</code> 取值各试一次</strong></td><td>Stage 能起、能看到一个立方体</td><td>模拟器截图确认 Stage 已开；记录 Progressive 对应的数字</td></tr>
+      <tr><td class="bold">Day 2</td><td><code>audio-core</code>：音频解码 + 分帧 + 24×24 梅尔频谱 + 特征量（带单测）</td><td><code>24 × 24</code> 能量矩阵</td><td>单测覆盖「静音输入全零」「纯正弦重心正确」</td></tr>
+      <tr><td class="bold">Day 3</td><td>柱阵：<code>ColumnMeshBuilder</code> + 24 柱环形布局 + 高度映射</td><td>能看见一圈高低不同的柱子</td><td>柱高与矩阵数值一一对应（打印校验）</td></tr>
+      <tr><td class="bold">Day 4</td><td>贴图烘焙：频段配色 + 频带条纹 + 明暗；地面声呐光环；显影开场参数</td><td>定稿截图</td><td>截图里无灰白块、明暗层次可辨、immersion 动画可见</td></tr>
+      <tr><td class="bold">Day 5</td><td>空间音频接入：<code>ObjectAudioComponent</code> × 4 + <code>prepareAudio</code> + <code>AudioEvents</code></td><td>4 个声源可定位</td><td>日志能打印每个声源坐标与 volume；能听到声音在播</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">Day 1 额外任务（不能省）</span>
+    进官方群问 6 问（设备型号 / Kotlin SDK 能否跑 4 Ultra / 预约窗口 / 决赛是否提供头显 / 能否兼提名两奖 / 空间音频示例包），<strong>并加问「官方『Create immersive spatial audio』样例工程能否提供」</strong> —— 那个样例是本方向最快的启动路径。
+  </div>
+
+  <h3><span class="num">8.3</span>验收命令（沿用现有链路）</h3>
+
+  <div class="codeblock">$env:JAVA_HOME='E:\software\Dev\androidstudio\androidStudio\jbr'
+$gradle='G:\minimaxworkspace\pico-spatial-2026\prototype\gradle-dist\gradle-8.13\bin\gradle.bat'
+&amp; $gradle -p 'G:\minimaxworkspace\pico-spatial-2026\app' --no-daemon :audio-core:test :app:assembleDebug --console=plain
+
+$env:PICO_HOME='C:\Users\11574\AppData\Local\PICO\sdk'
+$cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd'
+&amp; $cli app install 'G:\minimaxworkspace\pico-spatial-2026\app\app\build\outputs\apk\debug\app-debug.apk' -r
+&amp; $cli app launch com.spatialcoach.sonosphere</div>
+
+  <h3 id="sec-8-2"><span class="num">8.4</span>与方向 D 的关系（决策用）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:26%">维度</th><th style="width:34%">A 声之建筑</th><th>D 曝光暗房</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">独占的官方硬指标</td><td><strong>空间音频（三队全缺）</strong></td><td>无独占（MR 可用但弱）</td></tr>
+      <tr><td class="bold">真机 / 硬件门槛</td><td><strong>核心 API，不依赖 OS 6</strong></td><td>拍照钩子依赖 SpatialML → OS 6 → 4 Ultra 可能不行</td></tr>
+      <tr><td class="bold">外部依赖</td><td>1 段 60 秒音频</td><td>6–10 张照片（含 ≥3 张严重过曝）</td></tr>
+      <tr><td class="bold">可当场参与</td><td>转身找声源 / 绕到柱背</td><td>拍照 → 变山</td></tr>
+      <tr><td class="bold">六维预估</td><td><strong>91</strong>（折算 85–88）</td><td>86–87</td></tr>
+      <tr><td class="bold">内部一致性</td><td>音频内核（<code>audio-core</code>）</td><td>影像内核（<code>imaging-core</code>，已完整）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="conclusion">
+    <h3>决策建议</h3>
+    <p><strong>按 A 执行，11.22 设硬止损闸门。</strong></p>
+    <p>理由：A 同时在「独占硬指标」和「硬件门槛」两条上占优，而这两条正是 D 的软肋。且 A 的止损线<strong>可判定</strong>（真机验不出定位就切），D 的止损线模糊。</p>
+    <p><strong>若 11.22 真机验证失败：切 D。</strong>此时 D 的现成资产（曝光山脉 + 四窗口 + 42 单测 + 提交历史）全部还在，<strong>切过去是 1 天的成本，不是 3 周</strong>。这个「先 A 后 D」的顺序是风险最低的。</p>
+  </div>
+
+  <h3><span class="num">8.5</span>路演脚本（30 秒版）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">时间</th><th>动作与台词</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">0–3 s</td><td>「这是一段真实录音。」</td></tr>
+      <tr><td class="bold">3–6 s</td><td>（immersion 从 0 推到 100）<strong>「这是我家客厅 —— 现在它在显影。」</strong></td></tr>
+      <tr><td class="bold">6–12 s</td><td>24 根柱子从地面升起，柱子随声音呼吸。<strong>「60 秒，被切成了 24 根柱子。一根柱子是一秒。」</strong></td></tr>
+      <tr><td class="bold">12–18 s</td><td>4 个声源同时响，评委<strong>不由自主转头</strong>。<strong>「你现在听到的方向，是真的方向。」</strong></td></tr>
+      <tr><td class="bold">18–24 s</td><td>（走到某根柱背后）声音变闷。<strong>「我绕到它背后 —— 你听，它变了。」</strong></td></tr>
+      <tr><td class="bold">24–30 s</td><td>（转向评委）<strong>「声音不是被播放的，是被建造的。」</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.6</span>评委最可能问的 5 个问题</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:34%">问题</th><th>回答要点</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">这是真录音吗？</td><td>是，自己用手机录的。<strong>刻意保留底噪与手机麦克风的质感</strong>——这是「真实」的证据</td></tr>
+      <tr><td class="bold">声音定位是 SDK 自带还是你自己做的？</td><td>SDK 内建（HRTF 渲染 + <code>ObjectAudioComponent</code>）。<strong>我做的是「把声音映射成建筑」这一层</strong>——分析、分段、生成几何、挂声源</td></tr>
+      <tr><td class="bold">这套能用在游戏里吗？</td><td>能，<code>ObjectAudioComponent</code> 本来就是给游戏用的（官方文档的 VR 游戏用例就是这个）。<strong>我做的是「让声音变成可走进去的空间对象」</strong></td></tr>
+      <tr><td class="bold">你一个人做的？</td><td>是。<strong>作品可溯源：公开仓库 + 内核单测 + 安装包与 Commit ID 一一对应</strong>（评分本来就以安装包 + Commit ID 为依据）</td></tr>
+      <tr><td class="bold">和普通声音可视化有什么区别？</td><td>普通可视化是<strong>看</strong>频谱；这个是<strong>走进去</strong>，而且绕到背面声音真的变——屏幕做不到</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.7</span>立刻要做的三件事</h3>
+
+  <div class="takeaway"><span class="icon">1</span><span><strong>今天</strong>　进官方群问 6 问 + 加问「官方空间音频样例工程能否提供」+ 问 <strong>PICO 4 Ultra 能否跑 Spatial SDK</strong> 与预约窗口。<strong>这是当前最高优先级的未知。</strong></span></div>
+  <div class="takeaway"><span class="icon">2</span><span><strong>11.12 前</strong>　录 3 条 60 秒音频（朗读 / 街道 / 雨夜），<strong>朗读那条优先</strong>——有语义起伏，柱子才不一样</span></div>
+  <div class="takeaway"><span class="icon">3</span><span><strong>11.20 前</strong>　约一次真机（半小时也行）—— 只要能戴上头显听到「绕到柱后声音变闷」，这个方向就锁定了</span></div>
+
+  <h3><span class="num">8.8</span>提交前 48 小时检查清单</h3>
+
+  <p>锁版前逐项销账。<strong>官方正式评分以「安装包 + 对应 Commit ID」为依据</strong>，因此第 2 项与第 5 项是硬性的 —— 缺任何一条都会直接影响可评分性。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:8%" class="c">#</th><th style="width:34%">检查项</th><th style="width:12%" class="c">状态</th><th>判据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="c bold">1</td><td class="bold">安装包可安装</td><td class="c"><span class="pill pill-ok">□</span></td><td>卸载后重装成功，模拟器可启动并进入 Stage；无崩溃日志</td></tr>
+      <tr><td class="c bold">2</td><td class="bold">APK sha256 ↔ Commit ID 一一对应</td><td class="c"><span class="pill pill-ok">□</span></td><td>交包脚本输出对照表，提交包内含该表</td></tr>
+      <tr><td class="c bold">3</td><td class="bold">README 完整</td><td class="c"><span class="pill pill-ok">□</span></td><td>作品名 / 一句话 / 操作说明 / 技术栈 / 开源链接 / 素材来源</td></tr>
+      <tr><td class="c bold">4</td><td class="bold">30 分钟连续运行无崩溃</td><td class="c"><span class="pill pill-ok">□</span></td><td>准入门槛第 3 条。<strong>附完整 log 与时间戳</strong>（这项是硬门槛，不通过则作品根本不进正式评分）</td></tr>
+      <tr><td class="c bold">5</td><td class="bold">四个空间表面同框</td><td class="c"><span class="pill pill-ok">□</span></td><td>Stage + 3 副窗同时出内容；含一张可做概念图的真实截图</td></tr>
+      <tr><td class="c bold">6</td><td class="bold">演示视频就位</td><td class="c"><span class="pill pill-ok">□</span></td><td>60 秒内，含「显影开场 → 柱阵升起 → 转向找声源 → 绕到柱背」四拍</td></tr>
+      <tr><td class="c bold">7</td><td class="bold">报名信息核对</td><td class="c"><span class="pill pill-ok">□</span></td><td>赛道 PICO Spatial / 组长 = 本人 / 正式名单 ≤4 人 / 联合共建者署名</td></tr>
+      <tr><td class="c bold">8</td><td class="bold">提交物合规</td><td class="c"><span class="pill pill-ok">□</span></td><td>不含公司代码、ISP 参数表、内部文档、他人素材；模型与资产来源可追溯</td></tr>
+      <tr><td class="c bold">9</td><td class="bold">素材授权自洽</td><td class="c"><span class="pill pill-ok">□</span></td><td>音频为本人录制；街道录音无可识别人脸与清晰对话</td></tr>
+      <tr><td class="c bold">10</td><td class="bold">仓库干净</td><td class="c"><span class="pill pill-ok">□</span></td><td>无大文件、无构建产物、无密钥；提交信息逐字节无 BOM / 无 U+FFFD / 无 CRLF</td></tr>
+      <tr><td class="c bold">11</td><td class="bold">空间音频真机复测</td><td class="c"><span class="pill pill-ok">□</span></td><td>绕到柱背面能听出变化；转头能定位；混响参数可听出差异</td></tr>
+      <tr><td class="c bold">12</td><td class="bold">锁版时间</td><td class="c"><span class="pill pill-ok">□</span></td><td>12.18 内部验收完成，12.19 09:00 前留出 2 小时缓冲</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.9</span>交付节奏</h3>
+
+  <div class="timeline">
+    <div class="gen w1"><span class="tag">11.25</span><div class="key">首版交包</div><div class="note">APK + Commit 对照表 + README</div></div>
+    <div class="gen w2"><span class="tag">11.28</span><div class="key">功能闭环</div><div class="note">三副窗 + 5 组交互 + 自动演出</div></div>
+    <div class="gen w3"><span class="tag">12.06</span><div class="key">开源与溯源</div><div class="note">公开仓库 + 内核单测全绿</div></div>
+    <div class="gen w4"><span class="tag">12.12</span><div class="key">路演与演示片</div><div class="note">30 秒稿 + 3 分钟稿 + 60 秒片</div></div>
+    <div class="gen w4"><span class="tag">12.18</span><div class="key">内部验收定版</div><div class="note">§8.8 清单 12 项逐条销账</div></div>
+    <div class="gen w2"><span class="tag">12.19</span><div class="key">锁版提交</div><div class="note">09:00 截止，留 2 小时缓冲</div></div>
+  </div>
+
+  <table class="data avoid-break">
+    <thead>
+      <tr><th style="width:28%">交付物</th><th style="width:26%">形式</th><th style="width:16%" class="c">完成时点</th><th>去向</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">可安装包</td><td>APK（debug + release）</td><td class="c">11.25 / 12.18</td><td>赛事提交通道</td></tr>
+      <tr><td class="bold">安装包 ↔ Commit 对照表</td><td>脚本输出（sha256 + commit id + 时间）</td><td class="c">随每次交包</td><td>提交包内 + README 附录</td></tr>
+      <tr><td class="bold">README / 公开仓库</td><td>Markdown + GitHub（内核 + 单测）</td><td class="c">11.25 / 12.06</td><td>提交包内 + 开源加分</td></tr>
+      <tr><td class="bold">演示视频 / 概念图</td><td>MP4 60 秒内 + 真实运行截图</td><td class="c">12.12 / 12.05</td><td>提交材料 + 路演备用</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 09 附录 A：官方 API 速查                                          -->
+<!-- ============================================================ -->
+<section class="content" id="sec-appx">
+  <div class="sec-head"><span class="section-num">APPENDIX A · 速查</span>
+  <h2 class="section">官方空间音频 API 与 Stage 配置速查表</h2>
+  <div class="section-line"></div></div>
+
+  <p>下面这张表是执行期最常翻的一页：<strong>每一行都对着官方 SDK 6.1 agent-vault 文档逐条核对过</strong>，可以直接照着写，不需要再去翻文档。空间音频属于核心 SDK 能力，<strong>不需要实验标志，也不依赖 PICO OS 6</strong>（那条要求只针对 SpatialML）。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:30%">API / 组件</th><th style="width:12%">类别</th><th style="width:24%">关键参数</th><th>在本方案里的位置</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>ObjectAudioComponent</code></td><td>组件</td><td>挂在 Entity 上</td><td>柱阵即声源 —— 柱子动了声音自动跟着走，不写同步代码</td></tr>
+      <tr><td class="bold"><code>Directivity(pattern, sharpness)</code></td><td>参数</td><td>逐柱指向性</td><td>指向层：「绕到柱背声音变闷」—— 最省力也最难反驳的证据</td></tr>
+      <tr><td class="bold"><code>reverbVolume</code></td><td>参数</td><td>混响强度</td><td>混响层：同一段声音换个混响，就是换了个房间</td></tr>
+      <tr><td class="bold"><code>AudioEvents</code></td><td>API</td><td>按播放时间点回调</td><td>音画同步：柱高、光环、当前播放位置全部对齐</td></tr>
+      <tr><td class="bold"><code>AudioResource.load(…)</code></td><td>API</td><td>加载音频资源</td><td>60 秒母带切成 24 片，24 根柱子各挂一段</td></tr>
+      <tr><td class="bold"><code>entity.prepareAudio</code></td><td>API</td><td>预加载</td><td>开场前先备好 —— 播第一句时不卡，这是第一印象</td></tr>
+      <tr><td class="bold"><code>AmbientAudioComponent</code></td><td>组件</td><td>环境音</td><td>房间底噪：让空间听起来不空</td></tr>
+      <tr><td class="bold"><code>ChannelAudioComponent</code></td><td>组件</td><td>通道音</td><td>低频铺底与连续层，负责把 24 片连成一段</td></tr>
+      <tr><td class="bold"><code>AudioMixerGroupsComponent</code></td><td>组件</td><td>分组音量</td><td>混响层独立调，不与主声串音</td></tr>
+      <tr><td class="bold"><code>DistanceAttenuationMode</code></td><td>枚举</td><td><code>INVERSE_SQUARED</code> / <code>FIXED</code></td><td>柱阵半径 1.6 m 的听感校准（W2 真机调参）</td></tr>
+    </tbody>
+  </table>
+
+  <p>另有两条备选通路，需要时再上：<code>AudioResourceConfig(ambisonicsType)</code>（全景声，用于环境层）与 <code>SpatialAudioTrackExtension</code> + <code>SpatialAudioMode.OBJECT / AMBIENT</code>（接第三方播放器）。</p>
+
+  <h3><span class="num">A.1</span>Stage manifest 配置项</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:34%">manifest 键</th><th style="width:20%">取值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>pico.spatial.stage.id</code></td><td class="c"><code>SONOSPHERE</code></td><td>默认 Stage 的唯一名</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.style</code></td><td class="c"><span class="pill pill-warn">数字枚举待实测</span></td><td>文档只给了名字（Automatic / Mixed / Progressive / Full），没给数字。<strong>W1 第一天必须四个取值各试一遍</strong></td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion</code></td><td class="c"><code>50</code></td><td>默认沉浸度；开场动画从 0 推到 100，用 6 秒</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_min</code> / <code>_max</code></td><td class="c"><code>0</code> / <code>100</code></td><td>沉浸度上下限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.upperlimb</code></td><td class="c"><code>1</code></td><td>上肢可见 —— 交互时手在画面里，是加分项</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">A.2</span>模拟器能验什么、验不了什么</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">环节</th><th style="width:34%">模拟器上的实际情况</th><th>怎么办</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">空间音频听感</td><td>验不了 —— 没有真实声场与 HRTF 听感</td><td>只能靠 <strong>11.20 那次真机</strong>；这是止损线的唯一依据</td></tr>
+      <tr><td class="bold">声源指向性</td><td>听不出「绕到柱背变闷」</td><td>真机才能证明声音真的在那个位置，别的都替代不了</td></tr>
+      <tr><td class="bold">混响强度</td><td>验不了</td><td>真机调参；模拟器上只调数值，不做判断</td></tr>
+      <tr><td class="bold">麦克风 / 实时采集</td><td>无麦克风</td><td>本方向<strong>只播放不采集</strong>，素材离线录好再打进包</td></tr>
+      <tr><td class="bold">相机与深度</td><td>无真实相机、无深度图</td><td>与本方向无关 —— 那是方向 D 的前置条件</td></tr>
+      <tr><td class="bold">点击与手势</td><td><code>adb shell input tap</code> 无效、<code>adb root</code> 被拒</td><td>模拟器上根本点不动，交互验证全部推给真机</td></tr>
+      <tr><td class="bold">空间 UI 拾取</td><td>只认 <code>HMD_POINTER_SELECT_INTERACTOR</code> / <code>POINTER_HOVER_INTERACTOR</code> / <code>HAND_POKE_HOVER_INTERACTOR</code></td><td><strong>不要写普通触摸分支</strong>，那样在设备上也是死的</td></tr>
+      <tr><td class="bold">窗口体尺寸</td><td>0.768 m 立方，X 方向可见 ±0.384 m</td><td>主场景必须用 Stage 沉浸场景，窗口放不下半径 1.6 m 的柱阵</td></tr>
+      <tr><td class="bold">顶点色</td><td>不可靠</td><td>一律烘焙进贴图，别依赖顶点色通道</td></tr>
+      <tr><td class="bold">方向光</td><td>对自定义网格无效</td><td>光照同样烘进贴图，别指望运行时打光</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 结论与依据：放在最后，让「一句话判断」成为全书的落点 -->
+<section class="content">
+  <div class="conclusion">
+    <h3>一句话判断</h3>
+    <p><strong>声之建筑是四方向里天花板最高、且唯一独占一条官方硬指标的一个。</strong>它的难处不在想法，在「能不能在真机上被听见」——所以整份方案的重量都压在 11.20 那次真机预约上。</p>
+    <p><strong>放弃信号：11.22 仍无法在真机验证声源定位。</strong>此时切方向 D，不是因为 D 更好，而是因为<strong>拿不到的设备不会因为再等一周就来</strong>。</p>
+    <p>反过来说，<strong>只要 11.20 能戴上头显听到「绕到柱背声音变闷」，这个方向就没有理由再犹豫</strong> —— 那时候真正要花力气的是把它做得更好看、更完整，而不是再比较方向。</p>
+  </div>
+
+  <div class="footer-meta">
+    <h4>本方案书的依据与边界</h4>
+    <ul>
+      <li><strong>已实测</strong>：官方 SDK 6.1 agent-vault 文档逐条核对；BOM 6.1.9 依赖解析与构建通过（包体 +80 KB）；四窗口工程与 42 个内核单测在位（commit <code>97bc6ad</code> / <code>3b523a8</code>）。竞品信息来自公开飞书文档，其创意方向与排期可能随对方进展变化。</li>
+      <li><strong>未实测</strong>：真机上的空间音频听感、<code>stage.style</code> 数字枚举、手势手感 —— 三项均已列入 W1–W2 验证任务与止损线。</li>
+      <li><strong>估算法</strong>：六维预估 91 为上限值，真机未验前按 85–88 折算；18–22 人日不含稳定性压测与打磨。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHART INITIALISATION                                           -->
+<!-- ============================================================ -->
+<script>
+Chart.defaults.animation = false;
+Chart.defaults.font.family = '-apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif';
+Chart.defaults.font.size = 10;
+Chart.defaults.color = '#3b3944';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.boxHeight = 12;
+Chart.defaults.plugins.legend.labels.font = { size: 9 };
+Chart.defaults.plugins.tooltip.font = { size: 9 };
+
+var INK = '#16151a', MUTE = '#d8d2c6';
+var C_A = '#a35f00', C_D = '#3e5c76', C_X = '#94919c';
+var ACCENT = '#a35f00';
+
+/* --- 1. 竞争结构雷达 --------------------------------------------------- */
+(function () {
+  var el = document.getElementById('ch-compare');
+  if (!el) { return; }
+  new Chart(el, {
+    type: 'radar',
+    data: {
+      labels: ['独占官方硬指标', '媒介不可替代\n(只有 XR 能做)', '评委可当场参与', '无外部依赖\n(断网可跑)', '真机门槛友好度', '不可抄袭性'],
+      datasets: [
+        { label: '声之建筑 A', data: [95, 92, 88, 98, 90, 90], borderColor: C_A, backgroundColor: 'rgba(163,95,0,0.14)', pointBackgroundColor: C_A, borderWidth: 2, pointRadius: 3 },
+        { label: '曝光暗房 D', data: [55, 85, 90, 92, 60, 92], borderColor: C_D, backgroundColor: 'rgba(62,92,118,0.11)', pointBackgroundColor: C_D, borderWidth: 2, pointRadius: 3 },
+        { label: '竞品典型 (X-in-VR)', data: [25, 35, 25, 15, 85, 25], borderColor: C_X, backgroundColor: 'rgba(148,145,156,0.09)', pointBackgroundColor: C_X, borderWidth: 2, pointRadius: 3 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'rectRounded' } },
+        tooltip: { callbacks: { label: function (c) { return c.dataset.label + '：' + c.parsed.r + ' / 100'; } } }
+      },
+      scales: {
+        r: {
+          beginAtZero: true, max: 100,
+          grid: { color: '#e6e0d5' },
+          angleLines: { color: '#e6e0d5' },
+          pointLabels: { color: INK, font: { size: 9 } },
+          ticks: { stepSize: 25, backdropColor: 'transparent', color: '#94919c', font: { size: 8.5 } }
+        }
+      }
+    }
+  });
+})();
+
+/* --- 2. 六维预估对比 ---------------------------------------------------- */
+(function () {
+  var el = document.getElementById('ch-score');
+  if (!el) { return; }
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: ['创新 (25)', '功能设计 (25)', '界面视觉 (15)', '交互体验 (15)', '完成度 (10)', '路演 (10)'],
+      datasets: [
+        { label: 'A 声之建筑', data: [24, 22, 14, 14, 8, 9], backgroundColor: C_A, borderWidth: 0, borderRadius: 3, barThickness: 22 },
+        { label: 'D 曝光暗房', data: [21, 22, 13, 13, 8, 9], backgroundColor: C_D, borderWidth: 0, borderRadius: 3, barThickness: 22 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'rectRounded' } },
+        tooltip: { callbacks: { label: function (c) { return c.dataset.label + '：' + c.parsed.y + ' 分'; } } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: INK, font: { size: 9.5 } } },
+        y: { beginAtZero: true, max: 28, grid: { color: '#eee9e0' }, ticks: { stepSize: 5, color: '#6a6773' } }
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
+

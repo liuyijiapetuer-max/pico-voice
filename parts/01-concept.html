@@ -1,0 +1,72 @@
+<!-- ============================================================ -->
+<!-- 01 结论与三处关键修正                                           -->
+<!-- ============================================================ -->
+<section class="content" id="sec-1">
+  <span class="section-num">CHAPTER 01 · 结论</span>
+  <h2 class="section">结论与三处关键修正</h2>
+  <div class="section-line"></div>
+
+  <p class="lead">声之建筑值得做，而且比 11.07 那版判断更强。三条新依据：①<strong>竞品三队全部没有空间音频</strong>——官方硬指标点名的那一条，是 A 队（空间社交）、B 队（AI 校园）、C 队（机器人实验室）都没碰的位置；②<strong>空间音频是 Spatial SDK 的核心能力，不是实验性 API</strong>，不需要 <code>pico.spatial.use_experimental_api</code>，不要求 PICO OS 6，不依赖 SpatialML；③<strong>零外部依赖</strong>——不需要后端、账号、网络、模型下载、3D 资产，只需要一段 60 秒录音。</p>
+
+  <div class="insight warn">
+    <span class="label">唯一真正的死穴</span>
+    空间音频的听感（方向、距离、指向性）<strong>只能在头显上验证</strong>，模拟器只能验证「声音在播、坐标在动」。
+    <br><br>
+    <strong>止损线提前到 W2：若 11.22（W2 结束）仍无法在真机上验证声源定位，立即切方向 D。</strong>
+    理由不变且更硬：拿不到的设备不会因为再等一周就来；而 D 的全部分数都不依赖它。
+  </div>
+
+  <h3 id="sec-1-1"><span class="num">1.1</span>为什么现在做这个方向</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>独占一条官方硬指标</b>空间音频在官方五条硬指标里点名，且三支竞品队伍<strong>一个都没做</strong>。这是唯一能「独占」的位置——不是做得更好，是别人根本没碰。</div>
+    <div class="spec a"><b>技术门槛反而更低</b>空间音频是核心 SDK 能力（<code>ObjectAudioComponent</code> / <code>AmbientAudioComponent</code> / <code>Directivity</code> / <code>AudioEvents</code>），不需要实验性标志，不依赖 OS 6。而「拍照变山」那条路依赖 SpatialML → 要求 OS 6 → PICO 4 Ultra（OS5）可能整个用不了。</div>
+    <div class="spec b"><b>媒介不可替代</b>声音的方向性、远近、指向性在 2D 屏幕上<strong>不存在</strong>。评委戴上头显转一圈就能听出空间结构——这是屏幕永远做不到的，也是「只有 XR 能做」的硬证明。</div>
+    <div class="spec b"><b>零外部依赖</b>不需要后端服务、账号体系、网络请求、模型下载、3D 资产库、Tripo。演示现场断网照常跑——而竞品三队全部依赖后端或 LLM，断网即崩。</div>
+    <div class="spec c"><b>评委能亲手参与</b>转身找声源、绕到柱背后听变化——这是「体验」而不只是「观看」。三队的最小交付都是线性点击流程。</div>
+    <div class="spec c"><b>可自证深度</b>作品可溯源：公开仓库 + 内核单测 + 安装包与 Commit ID 一一对应。路线为「一个人做的」这一质疑的正面答案。</div>
+  </div>
+
+  <h3><span class="num">1.2</span>与 11.07 概念稿的三处关键修正</h3>
+
+  <p>方案书 §4 的概念稿写于 11.07。本轮逐条核对了官方 SDK 6.1 的 agent-vault 文档，发现<strong>三处必须修正的设计错误</strong>，其中一处是根本性的。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">修正</th><th style="width:30%">原稿写法</th><th style="width:30%">核实后</th><th>为什么必须改</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">① 主窗形态<br><span class="pill pill-bad">根本性</span></td>
+        <td>24 根柱子放在半径 1.6 m 的环上，装在 <strong>Volumetric 主窗</strong>里</td>
+        <td>主窗必须是 <strong>Stage 沉浸场景</strong>（<code>DefaultStage</code>），3 个副窗维持 Planar</td>
+        <td>窗口体实测 <strong>0.768 m 立方、X 方向可见仅 ±0.384 m</strong>，1.6 m 的环根本放不下，只有正前方约 ±120° 露得出来且柱子会被切边。官方「Create immersive spatial audio」样例用的就是 <code>DefaultStage</code> + Planar 控制面板——<strong>声源能绕着你走，前提是它是 Stage</strong></td>
+      </tr>
+      <tr>
+        <td class="bold">② 遮挡实现</td>
+        <td>「绕到柱背面时该声源被遮挡变闷」——计划自己写遮挡模型</td>
+        <td>用官方内建的 <code>Directivity(pattern, sharpness)</code></td>
+        <td>指向性是官方组件的一等参数：<code>pattern</code>（0 全向 → 1 八字形）决定极性图形状，<code>sharpness</code> 决定聚焦度。<strong>零成本拿到「绕到背面声音真的变闷」</strong>，而这正是「声音真的在那个位置」最省力也最难反驳的证明</td>
+      </tr>
+      <tr>
+        <td class="bold">③ 音画同步</td>
+        <td>自己算播放进度，对齐柱子的点亮与呼吸</td>
+        <td>用官方 <code>AudioEvents</code>——按播放时间点触发回调</td>
+        <td>同步由系统保证，<strong>不受帧率与调度抖动影响</strong>。自己算进度会随负载漂移，在决赛现场掉帧时最先崩掉的就是音画同步</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">还有一处原稿说错了，这里更正</span>
+    §4 写「影像内核的直方图 / 缺陷判据可以扔掉」——<strong>扔的是语义，不是骨架</strong>。
+    <code>Frame → Analyzer → Field → MeshBuilder → MeshModel</code> 这套分层照抄给音频侧（<code>AudioFrame → SpectrumAnalyzer → EnergyField → ColumnMeshBuilder</code>），连同 42 个内核单测的测试基建一起转过去。详见第 8 章。
+  </div>
+
+  <div class="kpis">
+    <div class="kpi amber"><div class="label">六维预估</div><div class="value">91<span class="unit"> / 100</span></div><div class="desc">四方向第一，领先 D 4–5 分</div></div>
+    <div class="kpi teal"><div class="label">新写工作量</div><div class="value">18–22<span class="unit"> 人日</span></div><div class="desc">不含稳定性压测与打磨</div></div>
+    <div class="kpi rose"><div class="label">止损闸门</div><div class="value">11.22</div><div class="desc">真机验不出定位即切 D</div></div>
+    <div class="kpi slate"><div class="label">外部依赖</div><div class="value">1<span class="unit"> 段录音</span></div><div class="desc">零后端 / 零账号 / 零网络</div></div>
+  </div>
+</section>

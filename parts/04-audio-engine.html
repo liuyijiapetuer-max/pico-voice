@@ -1,0 +1,144 @@
+<!-- ============================================================ -->
+<!-- 04 空间音频引擎                                                -->
+<!-- ============================================================ -->
+<section class="content" id="sec-4">
+  <span class="section-num">CHAPTER 04 · 引擎</span>
+  <h2 class="section">空间音频引擎（官方 API 核对）</h2>
+  <div class="section-line"></div>
+
+  <p class="lead">本章每一个 API 名与参数都来自本机 PICO SDK 6.1 的 <code>agent-vault</code> 官方文档（<code>com.pico.spatial.core.ecs.audio</code> / <code>com.pico.spatial.audio</code>），<strong>不是凭记忆写的</strong>。底层用 <strong>HRTF</strong> 渲染：「models the acoustic characteristics of the human ear based on HRTF」。</p>
+
+  <div class="insight">
+    <span class="label">为什么这一章最重要</span>
+    空间音频是<strong>核心 SDK 能力</strong>，不是实验性 API —— 不需要 <code>pico.spatial.use_experimental_api</code>，<strong>不要求 PICO OS 6</strong>，不依赖 SpatialML。
+    这意味着它的真机门槛比「拍照变山」那条路低得多（那条要 OS 6，4 Ultra 是 OS 5）。
+  </div>
+
+  <h3 id="sec-4-1"><span class="num">4.1</span>API 清单与参数</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:30%">API</th><th style="width:12%">包</th><th>用途与关键参数</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold"><code>AudioResource.load(name, "asset://xxx.wav", LoadType.FROM_ASSETS)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>从 assets 加载音频资源</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>ObjectAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><strong>声源绑实体</strong>：<code>volume</code>（总音量）、<code>Directivity(pattern, sharpness)</code>（指向性）、<code>distanceAttenuationMode</code>（距离衰减）、<code>reverbVolume</code>（混响音量）。位置或朝向变化时自动调整输出</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>Directivity(pattern, sharpness)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><code>pattern</code> = 0 全向 → 0.5 心形 → 1 八字形；<code>sharpness</code> = 聚焦程度。<strong>绕到柱背面声音变闷就是它</strong>，官方内建，不用自己做遮挡</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>DistanceAttenuationMode</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><code>INVERSE_SQUARED</code>（默认，按距离平方反比衰减）/ <code>FIXED</code>（恒定）。<strong>柱阵缩放时能听出变远变近</strong></td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AmbientAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>环境床（房间底噪）—— 让「空间」听起来不空</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>ChannelAudioComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>通道音（副窗反馈音等）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>entity.prepareAudio(resource)</code> / <code>entity.playAudio(resource)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>拿到 <code>AudioPlayerController</code>，控制 <code>play() / pause() / stop()</code></td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioEvents</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td><strong>按播放时间点触发自定义回调</strong> ⇒ 音画同步交给系统，不自己算进度</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioMixerGroupsComponent</code> + <code>AudioMixerGroupResource.setVolume()</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>统一控制一组资源的音量 / 混响（做交叉淡入淡出、避免爆音）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioResourceLibraryComponent</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>以字典方式批量增删查 24 份资源</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioGroupResource</code> + <code>AudioGroupResourcePlayMode</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>资源集合按播放模式随机选一个 —— 做「随机环境声」很好用</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>AudioResourceConfig(mixerGroupID, ambisonicsType, ...)</code></td>
+        <td class="c">core.ecs.audio</td>
+        <td>资源配置，<strong>含 AmbisonicsType</strong>（360° 音频）</td>
+      </tr>
+      <tr>
+        <td class="bold"><code>SpatialAudioTrackExtension</code></td>
+        <td class="c">spatial.audio</td>
+        <td>给第三方播放器接空间音频：<code>SpatialAudioMode.OBJECT / AMBIENT</code>，支持 <code>attachToEntity</code>（绑 3D 物体）或 <code>attachToContainer</code>（绑窗口）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">4.2</span>核心代码骨架</h3>
+
+  <p>柱子实体<strong>就是</strong>声源 —— <code>ObjectAudioComponent</code> 直接挂在柱子的 Entity 上。这样柱阵旋转 / 缩放时，<strong>声音位置自动跟着走</strong>，不需要任何额外同步代码。</p>
+
+  <div class="codeblock">// 柱子 = 声源
+val column = Entity()
+column.components.set(
+    ObjectAudioComponent(
+        volume = 1.0f,
+        Directivity(pattern = 0.35f, sharpness = 0.60f),
+        distanceAttenuationMode = DistanceAttenuationMode.INVERSE_SQUARED,
+        reverbVolume = 0.5f
+    )
+)
+val player = column.prepareAudio(audioResource)   // AudioPlayerController
+player.play()</div>
+
+  <p>官方文档给出的等价写法（第三方的 <code>AudioTrack</code> / <code>ExoPlayer</code> / <code>MediaPlayer</code> 也能接）：</p>
+
+  <div class="codeblock">val extension = SpatialAudioTrackExtension()
+extension.spatialAudioTrackExtensionConfig(
+    mode = SpatialAudioMode.OBJECT,
+    isAmbisonic = false,
+    builder = audioTrackBuilder
+)
+extension.attachToEntityWithBuilder(targetEntity, audioTrackBuilder)
+val audioTrack = audioTrackBuilder.build()</div>
+
+  <h3><span class="num">4.3</span>声源策略</h3>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>24 柱 = 24 个潜在声源</b>但<strong>同时只激活能量最高的 4 个</strong>。理由有两条：一是性能（24 路空间化渲染 + 衰减计算）；二是听感清晰（同时响 24 个会糊成一片，评委反而听不出方向）。</div>
+    <div class="spec a"><b>声源实体即柱子</b><code>ObjectAudioComponent</code> 挂在柱 Entity 上 ⇒ 柱阵变换时声音位置自动跟随，无需同步代码。</div>
+    <div class="spec b"><b>资源统一管理</b>24 段音频用 <code>AudioResourceLibraryComponent</code> 管理；播放头推进靠 <code>AudioEvents</code>。</div>
+    <div class="spec b"><b>切换要交叉淡化</b>换声源时用 <code>AudioMixerGroupResource.setVolume()</code> 做淡入淡出，否则会出现爆音 —— 爆音在评委的耳朵里是致命的。</div>
+    <div class="spec c"><b>不做实时麦克风采集</b>输入是文件回放。理由：模拟器无麦克风；回放可复现、可调试、可在提交包内自洽（不依赖任何授权）。</div>
+    <div class="spec c"><b>频段决定指向性</b>低频柱 pattern 更全向（包裹感），高频柱 pattern 更聚焦（定位感）。零成本，但听起来立刻专业。</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">六维预估：声之建筑 vs 曝光暗房</div>
+    <div class="chart-sub">声之建筑的优势集中在「创新」与「交互体验」两维 —— 前者来自独占空间音频硬指标，后者来自评委可亲身参与。</div>
+    <div class="chart-wrap short"><canvas id="ch-score"></canvas></div>
+  </div>
+
+  <div class="insight">
+    <span class="label">官方样例工程是最快的启动路径</span>
+    官方「<strong>Create immersive spatial audio</strong>」样例的完整结构是：<code>DefaultStage</code> + Planar 控制面板 + 环境音 + 移动声源，源码在 <code>app/src/main/java/com/pico/spatial/sample/spatialaudio/</code>：
+    <code>Main.kt</code>（声明 Stage 与控制面板）/ <code>ui/ImmersiveScene.kt</code> / <code>ui/AudioControlViewModel.kt</code> / <code>data/AudioResourceStore.kt</code> / <code>manager/AudioPlayer.kt</code> / <code>ecs/FlyTrajectory.kt</code>。
+    <br><br>
+    <strong>进官方群时务必问一句：能否提供这个样例工程。</strong>拿到它等于拿到本方向的地基。
+  </div>
+</section>

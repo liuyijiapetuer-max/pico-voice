@@ -1,0 +1,84 @@
+<!-- ============================================================ -->
+<!-- 09 附录 A：官方 API 速查                                          -->
+<!-- ============================================================ -->
+<section class="content" id="sec-appx">
+  <span class="section-num">APPENDIX A · 速查</span>
+  <h2 class="section">官方空间音频 API 与 Stage 配置速查表</h2>
+  <div class="section-line"></div>
+
+  <p>下面这张表是执行期最常翻的一页：<strong>每一行都对着官方 SDK 6.1 agent-vault 文档逐条核对过</strong>，可以直接照着写，不需要再去翻文档。空间音频属于核心 SDK 能力，<strong>不需要实验标志，也不依赖 PICO OS 6</strong>（那条要求只针对 SpatialML）。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:30%">API / 组件</th><th style="width:12%">类别</th><th style="width:24%">关键参数</th><th>在本方案里的位置</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>ObjectAudioComponent</code></td><td>组件</td><td>挂在 Entity 上</td><td>柱阵即声源 —— 柱子动了声音自动跟着走，不写同步代码</td></tr>
+      <tr><td class="bold"><code>Directivity(pattern, sharpness)</code></td><td>参数</td><td>逐柱指向性</td><td>指向层：「绕到柱背声音变闷」—— 最省力也最难反驳的证据</td></tr>
+      <tr><td class="bold"><code>reverbVolume</code></td><td>参数</td><td>混响强度</td><td>混响层：同一段声音换个混响，就是换了个房间</td></tr>
+      <tr><td class="bold"><code>AudioEvents</code></td><td>API</td><td>按播放时间点回调</td><td>音画同步：柱高、光环、当前播放位置全部对齐</td></tr>
+      <tr><td class="bold"><code>AudioResource.load(…)</code></td><td>API</td><td>加载音频资源</td><td>60 秒母带切成 24 片，24 根柱子各挂一段</td></tr>
+      <tr><td class="bold"><code>entity.prepareAudio</code></td><td>API</td><td>预加载</td><td>开场前先备好 —— 播第一句时不卡，这是第一印象</td></tr>
+      <tr><td class="bold"><code>AmbientAudioComponent</code></td><td>组件</td><td>环境音</td><td>房间底噪：让空间听起来不空</td></tr>
+      <tr><td class="bold"><code>ChannelAudioComponent</code></td><td>组件</td><td>通道音</td><td>低频铺底与连续层，负责把 24 片连成一段</td></tr>
+      <tr><td class="bold"><code>AudioMixerGroupsComponent</code></td><td>组件</td><td>分组音量</td><td>混响层独立调，不与主声串音</td></tr>
+      <tr><td class="bold"><code>DistanceAttenuationMode</code></td><td>枚举</td><td><code>INVERSE_SQUARED</code> / <code>FIXED</code></td><td>柱阵半径 1.6 m 的听感校准（W2 真机调参）</td></tr>
+    </tbody>
+  </table>
+
+  <p>另有两条备选通路，需要时再上：<code>AudioResourceConfig(ambisonicsType)</code>（全景声，用于环境层）与 <code>SpatialAudioTrackExtension</code> + <code>SpatialAudioMode.OBJECT / AMBIENT</code>（接第三方播放器）。</p>
+
+  <h3><span class="num">A.1</span>Stage manifest 配置项</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:34%">manifest 键</th><th style="width:20%">取值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold"><code>pico.spatial.stage.id</code></td><td class="c"><code>SONOSPHERE</code></td><td>默认 Stage 的唯一名</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.style</code></td><td class="c"><span class="pill pill-warn">数字枚举待实测</span></td><td>文档只给了名字（Automatic / Mixed / Progressive / Full），没给数字。<strong>W1 第一天必须四个取值各试一遍</strong></td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion</code></td><td class="c"><code>50</code></td><td>默认沉浸度；开场动画从 0 推到 100，用 6 秒</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.immersion_min</code> / <code>_max</code></td><td class="c"><code>0</code> / <code>100</code></td><td>沉浸度上下限</td></tr>
+      <tr><td class="bold"><code>pico.spatial.stage.upperlimb</code></td><td class="c"><code>1</code></td><td>上肢可见 —— 交互时手在画面里，是加分项</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">A.2</span>模拟器能验什么、验不了什么</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:22%">环节</th><th style="width:34%">模拟器上的实际情况</th><th>怎么办</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">空间音频听感</td><td>验不了 —— 没有真实声场与 HRTF 听感</td><td>只能靠 <strong>11.20 那次真机</strong>；这是止损线的唯一依据</td></tr>
+      <tr><td class="bold">声源指向性</td><td>听不出「绕到柱背变闷」</td><td>真机才能证明声音真的在那个位置，别的都替代不了</td></tr>
+      <tr><td class="bold">混响强度</td><td>验不了</td><td>真机调参；模拟器上只调数值，不做判断</td></tr>
+      <tr><td class="bold">麦克风 / 实时采集</td><td>无麦克风</td><td>本方向<strong>只播放不采集</strong>，素材离线录好再打进包</td></tr>
+      <tr><td class="bold">相机与深度</td><td>无真实相机、无深度图</td><td>与本方向无关 —— 那是方向 D 的前置条件</td></tr>
+      <tr><td class="bold">点击与手势</td><td><code>adb shell input tap</code> 无效、<code>adb root</code> 被拒</td><td>模拟器上根本点不动，交互验证全部推给真机</td></tr>
+      <tr><td class="bold">空间 UI 拾取</td><td>只认 <code>HMD_POINTER_SELECT_INTERACTOR</code> / <code>POINTER_HOVER_INTERACTOR</code> / <code>HAND_POKE_HOVER_INTERACTOR</code></td><td><strong>不要写普通触摸分支</strong>，那样在设备上也是死的</td></tr>
+      <tr><td class="bold">窗口体尺寸</td><td>0.768 m 立方，X 方向可见 ±0.384 m</td><td>主场景必须用 Stage 沉浸场景，窗口放不下半径 1.6 m 的柱阵</td></tr>
+      <tr><td class="bold">顶点色</td><td>不可靠</td><td>一律烘焙进贴图，别依赖顶点色通道</td></tr>
+      <tr><td class="bold">方向光</td><td>对自定义网格无效</td><td>光照同样烘进贴图，别指望运行时打光</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 结论与依据：放在最后，让「一句话判断」成为全书的落点 -->
+<section class="content">
+  <div class="conclusion">
+    <h3>一句话判断</h3>
+    <p><strong>声之建筑是四方向里天花板最高、且唯一独占一条官方硬指标的一个。</strong>它的难处不在想法，在「能不能在真机上被听见」——所以整份方案的重量都压在 11.20 那次真机预约上。</p>
+    <p><strong>放弃信号：11.22 仍无法在真机验证声源定位。</strong>此时切方向 D，不是因为 D 更好，而是因为<strong>拿不到的设备不会因为再等一周就来</strong>。</p>
+    <p>反过来说，<strong>只要 11.20 能戴上头显听到「绕到柱背声音变闷」，这个方向就没有理由再犹豫</strong> —— 那时候真正要花力气的是把它做得更好看、更完整，而不是再比较方向。</p>
+  </div>
+
+  <div class="footer-meta">
+    <h4>本方案书的依据与边界</h4>
+    <ul>
+      <li><strong>已实测</strong>：官方 SDK 6.1 agent-vault 文档逐条核对；BOM 6.1.9 依赖解析与构建通过（包体 +80 KB）；四窗口工程与 42 个内核单测在位（commit <code>97bc6ad</code> / <code>3b523a8</code>）。竞品信息来自公开飞书文档，其创意方向与排期可能随对方进展变化。</li>
+      <li><strong>未实测</strong>：真机上的空间音频听感、<code>stage.style</code> 数字枚举、手势手感 —— 三项均已列入 W1–W2 验证任务与止损线。</li>
+      <li><strong>估算法</strong>：六维预估 91 为上限值，真机未验前按 85–88 折算；18–22 人日不含稳定性压测与打磨。</li>
+    </ul>
+  </div>
+</section>

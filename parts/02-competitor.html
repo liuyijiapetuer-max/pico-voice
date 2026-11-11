@@ -1,0 +1,60 @@
+<!-- ============================================================ -->
+<!-- 02 竞品对位                                                    -->
+<!-- ============================================================ -->
+<section class="content" id="sec-2">
+  <span class="section-num">CHAPTER 02 · 对位</span>
+  <h2 class="section">竞品对位：他们赢在第一眼</h2>
+  <div class="section-line"></div>
+
+  <p class="lead">情报来源：飞书 wiki《X University × PICO Space Program 2026 — 三队组建与开发安排》。这不是一个竞品作品，是<strong>一个组织的三队作战计划</strong>：40+ 精神股东、12 名正式队员（三队各 ≤4 人）、名单外联合共建成员开放参与（设计 / 3D 美术 / AIGC / 音效 / 测试 / 视频）。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:12%">队伍</th><th style="width:16%">赛道</th><th style="width:26%">创意原型</th><th style="width:18%">最小交付</th><th>官方「空间音频」</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">A 队 XLink Spatial</td><td class="c"><strong>PICO Spatial (Kotlin)</strong></td><td>把 LinkedIn 搬进三维空间（空间社交 + AI 匹配创造者）</td><td>查看创造者 → 发现项目 → 发起连接</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold">B 队 Living World</td><td class="c">Unity Spatial</td><td>AI 原生虚拟大学（AI Scholar 导师 + X Quest 任务）</td><td>进入校园 → 与 AI 对话 → 领取任务</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold">C 队 X Future Lab</td><td class="c">OpenXR</td><td>沉浸式未来实验室（机器人 / AI / 智能硬件 + 互动挑战）</td><td>进入实验室 → 操作设备 → 完成挑战</td><td><span class="pill pill-bad">无</span></td></tr>
+      <tr><td class="bold" style="color:var(--accent)">我们 · 声之建筑</td><td class="c"><strong>PICO Spatial (Kotlin)</strong></td><td><strong>把不可见的声音变成能走进去的建筑</strong></td><td><strong>转头找声源 → 绕到柱背听变化</strong></td><td><span class="pill pill-best">最强命中</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">2.1</span>他们三个创意的共同结构：「空间化的已知品类」</h3>
+
+  <p>把三个方向摊开看，它们是同一类东西的不同实例：<strong>给一个大家熟悉的 2D 品类套上 VR 外壳</strong>。这在评审语境里是<strong>安全牌</strong>——评委秒懂、演示不易翻车。但它有两个死穴：</p>
+
+  <div class="specs avoid-break">
+    <div class="spec b"><b>死穴一 · 没有一个是「只有 XR 能做」的</b>把 LinkedIn、校园、实验室搬进 VR，PCVR 或手机 VR 都能做到八成。评委问「<strong>为什么必须戴头显</strong>」，他们只能答「沉浸感更强」——这是 XR 评审里的弱答案，直接压「创新 25」分。</div>
+    <div class="spec b"><b>死穴二 · 抄起来很快</b>「社交进空间」「AI 进校园」是任何人一周能想到的提案，<strong>没有防御性</strong>。我们把一段录音变成一栋建筑，抄不走——因为它需要「音频分析 → 空间几何 → 空间音频定位」三件事同时成立。</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">竞争结构对比：五个维度上谁占优</div>
+    <div class="chart-sub">同一把尺子量三个对象。「竞品典型」代表 X-in-VR 类作品的一般形态。</div>
+    <div class="chart-wrap"><canvas id="ch-compare"></canvas></div>
+  </div>
+
+  <h3><span class="num">2.2</span>逐项对位</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:20%">维度</th><th style="width:24%">竞品三队</th><th style="width:24%">我们</th><th>判定</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">创意原型</td><td>空间化的已知品类</td><td>不可见的物理量 → 可走进去的空间</td><td><span class="pill pill-best">结构不同</span></td></tr>
+      <tr><td class="bold">官方硬指标「空间音频」</td><td>三队全无</td><td>逐柱定位 + 指向性 + 距离衰减 + 混响</td><td><span class="pill pill-best">独占</span></td></tr>
+      <tr><td class="bold">只有 XR 能做？</td><td>否（八成可复现）</td><td>是（声音的方向性在 2D 屏上不存在）</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">评委能亲手参与？</td><td>否（线性点击流程）</td><td>是（转身找声源 / 绕到柱背）</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">依赖后端 / 账号 / 网络</td><td>全部依赖（匹配服务 / LLM / 任务系统）</td><td>全部不依赖，断网照常跑</td><td><span class="pill pill-best">我们赢</span></td></tr>
+      <tr><td class="bold">概念图 vs 实际落地</td><td>三张全是 AI 生成图，预期被顶得很高</td><td>用真实运行截图当概念图</td><td><span class="pill pill-good">我们稳</span></td></tr>
+      <tr><td class="bold">美术 / 音效 / 视频</td><td>各有专人（我们已决定不加入）</td><td>一个人扛：贴图自烘焙 + 空间音源自做 + H3 出片</td><td><span class="pill pill-warn">他们赢</span></td></tr>
+      <tr><td class="bold">团队叙事</td><td>4 人团队，资源占优</td><td>单人：可能被问「一个人做的？」</td><td><span class="pill pill-warn">他们赢</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">路演一句话（不点名任何队伍）</span>
+    「市面上有的是 AI 驱动的空间应用。我们做的是<strong>让声音变成一栋能走进去的建筑</strong> —— 你绕过它背面，声音真的会变。这件事在屏幕上永远做不到。」
+  </div>
+</section>

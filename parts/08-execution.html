@@ -1,0 +1,183 @@
+<!-- ============================================================ -->
+<!-- 08 执行落地与决策                                              -->
+<!-- ============================================================ -->
+<section class="content" id="sec-8">
+  <span class="section-num">CHAPTER 08 · 执行</span>
+  <h2 class="section">执行落地与决策</h2>
+  <div class="section-line"></div>
+
+  <h3><span class="num">8.1</span>工程复用 vs 重做</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">类别</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">直接复用<br><span class="pill pill-ok">零改动</span></td><td>四窗口机制 + <code>SessionBus</code> + 贴图烘焙管线 + <code>MeshResource</code> 打包流程 + 模拟器工具链（pico-cli / adb / 截图）+ APK 构建安装链路 + 交包脚本 + <strong>42 个内核单测的测试基建与写法</strong></td></tr>
+      <tr><td class="bold">骨架复用<br><span class="pill pill-good">换实现</span></td><td><code>imaging-core</code> 的<strong>架构骨架</strong>：<code>Frame → Analyzer → Field → MeshBuilder → MeshModel</code>。音频侧照抄这套分层：<code>AudioFrame → SpectrumAnalyzer → EnergyField → ColumnMeshBuilder</code>。<strong>§4 原稿说「可以扔掉影像内核」说重了 —— 扔的是语义，不是骨架</strong></td></tr>
+      <tr><td class="bold">需要新写</td><td>音频解码 + 梅尔频谱分析器 + 柱阵网格生成器 + <code>ObjectAudioComponent</code> 接入 + <code>AudioEvents</code> 同步 + 三个副窗的新内容</td></tr>
+      <tr><td class="bold">不再需要</td><td>影像内核的直方图 / 曝光缺陷判据（曝光山脉、缺陷语义色、地形 hillshade 全部停用）</td></tr>
+      <tr><td class="bold">工作量估算</td><td>新写 <strong>18–22 人日</strong>（不含稳定性压测与打磨）。6 周 = 30 个工作日，缓冲 <strong>8–12 天</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="sec-8-1"><span class="num">8.2</span>目标文件结构与第一周逐日拆解</h3>
+
+  <div class="codeblock">app/
+├── audio-core/                       ← 新增（纯 Kotlin，零 Android 依赖）
+│   └── src/main/kotlin/com/spatialcoach/audio/core/
+│       ├── AudioFrame.kt             ← PCM 帧
+│       ├── SpectrumAnalyzer.kt       ← 梅尔频谱 + 24 段能量矩阵
+│       ├── EnergyField.kt            ← 24×24 矩阵 + 每段特征
+│       └── RoomTone.kt               ← 房间感指标
+├── app/src/main/java/com/spatialcoach/sonosphere/
+│   ├── platform/                     ← SpatialApplication / LaunchActivity（Stage 改造）
+│   ├── stage/                        ← Stage 内容
+│   │   ├── SonosphereStage.kt        ← DefaultStage { ... }
+│   │   ├── ColumnRing.kt             ← 24 柱 ECS 实体 + 柱阵变换
+│   │   ├── ColumnMeshBuilder.kt      ← 八棱柱网格
+│   │   └── BakedTexture.kt           ← 频段配色 + 频带条纹 + 明暗烘焙
+│   ├── audio/
+│   │   ├── SpatialAudioDirector.kt   ← 4 个 ObjectAudioComponent 声源调度
+│   │   ├── AudioEventBridge.kt       ← AudioEvents → 视觉回调
+│   │   └── AudioLibrary.kt           ← AudioResourceLibraryComponent + 24 资源
+│   ├── content/                      ← 三个副窗（频谱环 / 时间轴 / 声学参数）
+│   └── interaction/                  ← 5 组手势 + 降级路径
+└── app/src/main/assets/audio/        ← hommi 的 60 秒 wav（切成 24 段）</div>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:10%">日程</th><th style="width:30%">做什么</th><th style="width:26%">产出</th><th>完成判据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">Day 1</td><td>Stage 改造：manifest 四项 meta-data + <code>mainApp</code> 里 <code>DefaultStage { }</code>；<strong>把 4 个 <code>stage.style</code> 取值各试一次</strong></td><td>Stage 能起、能看到一个立方体</td><td>模拟器截图确认 Stage 已开；记录 Progressive 对应的数字</td></tr>
+      <tr><td class="bold">Day 2</td><td><code>audio-core</code>：音频解码 + 分帧 + 24×24 梅尔频谱 + 特征量（带单测）</td><td><code>24 × 24</code> 能量矩阵</td><td>单测覆盖「静音输入全零」「纯正弦重心正确」</td></tr>
+      <tr><td class="bold">Day 3</td><td>柱阵：<code>ColumnMeshBuilder</code> + 24 柱环形布局 + 高度映射</td><td>能看见一圈高低不同的柱子</td><td>柱高与矩阵数值一一对应（打印校验）</td></tr>
+      <tr><td class="bold">Day 4</td><td>贴图烘焙：频段配色 + 频带条纹 + 明暗；地面声呐光环；显影开场参数</td><td>定稿截图</td><td>截图里无灰白块、明暗层次可辨、immersion 动画可见</td></tr>
+      <tr><td class="bold">Day 5</td><td>空间音频接入：<code>ObjectAudioComponent</code> × 4 + <code>prepareAudio</code> + <code>AudioEvents</code></td><td>4 个声源可定位</td><td>日志能打印每个声源坐标与 volume；能听到声音在播</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">Day 1 额外任务（不能省）</span>
+    进官方群问 6 问（设备型号 / Kotlin SDK 能否跑 4 Ultra / 预约窗口 / 决赛是否提供头显 / 能否兼提名两奖 / 空间音频示例包），<strong>并加问「官方『Create immersive spatial audio』样例工程能否提供」</strong> —— 那个样例是本方向最快的启动路径。
+  </div>
+
+  <h3><span class="num">8.3</span>验收命令（沿用现有链路）</h3>
+
+  <div class="codeblock">$env:JAVA_HOME='E:\software\Dev\androidstudio\androidStudio\jbr'
+$gradle='G:\minimaxworkspace\pico-spatial-2026\prototype\gradle-dist\gradle-8.13\bin\gradle.bat'
+&amp; $gradle -p 'G:\minimaxworkspace\pico-spatial-2026\app' --no-daemon :audio-core:test :app:assembleDebug --console=plain
+
+$env:PICO_HOME='C:\Users\11574\AppData\Local\PICO\sdk'
+$cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd'
+&amp; $cli app install 'G:\minimaxworkspace\pico-spatial-2026\app\app\build\outputs\apk\debug\app-debug.apk' -r
+&amp; $cli app launch com.spatialcoach.sonosphere</div>
+
+  <h3 id="sec-8-2"><span class="num">8.4</span>与方向 D 的关系（决策用）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:26%">维度</th><th style="width:34%">A 声之建筑</th><th>D 曝光暗房</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">独占的官方硬指标</td><td><strong>空间音频（三队全缺）</strong></td><td>无独占（MR 可用但弱）</td></tr>
+      <tr><td class="bold">真机 / 硬件门槛</td><td><strong>核心 API，不依赖 OS 6</strong></td><td>拍照钩子依赖 SpatialML → OS 6 → 4 Ultra 可能不行</td></tr>
+      <tr><td class="bold">外部依赖</td><td>1 段 60 秒音频</td><td>6–10 张照片（含 ≥3 张严重过曝）</td></tr>
+      <tr><td class="bold">可当场参与</td><td>转身找声源 / 绕到柱背</td><td>拍照 → 变山</td></tr>
+      <tr><td class="bold">六维预估</td><td><strong>91</strong>（折算 85–88）</td><td>86–87</td></tr>
+      <tr><td class="bold">内部一致性</td><td>音频内核（<code>audio-core</code>）</td><td>影像内核（<code>imaging-core</code>，已完整）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="conclusion">
+    <h3>决策建议</h3>
+    <p><strong>按 A 执行，11.22 设硬止损闸门。</strong></p>
+    <p>理由：A 同时在「独占硬指标」和「硬件门槛」两条上占优，而这两条正是 D 的软肋。且 A 的止损线<strong>可判定</strong>（真机验不出定位就切），D 的止损线模糊。</p>
+    <p><strong>若 11.22 真机验证失败：切 D。</strong>此时 D 的现成资产（曝光山脉 + 四窗口 + 42 单测 + 提交历史）全部还在，<strong>切过去是 1 天的成本，不是 3 周</strong>。这个「先 A 后 D」的顺序是风险最低的。</p>
+  </div>
+
+  <h3><span class="num">8.5</span>路演脚本（30 秒版）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">时间</th><th>动作与台词</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">0–3 s</td><td>「这是一段真实录音。」</td></tr>
+      <tr><td class="bold">3–6 s</td><td>（immersion 从 0 推到 100）<strong>「这是我家客厅 —— 现在它在显影。」</strong></td></tr>
+      <tr><td class="bold">6–12 s</td><td>24 根柱子从地面升起，柱子随声音呼吸。<strong>「60 秒，被切成了 24 根柱子。一根柱子是一秒。」</strong></td></tr>
+      <tr><td class="bold">12–18 s</td><td>4 个声源同时响，评委<strong>不由自主转头</strong>。<strong>「你现在听到的方向，是真的方向。」</strong></td></tr>
+      <tr><td class="bold">18–24 s</td><td>（走到某根柱背后）声音变闷。<strong>「我绕到它背后 —— 你听，它变了。」</strong></td></tr>
+      <tr><td class="bold">24–30 s</td><td>（转向评委）<strong>「声音不是被播放的，是被建造的。」</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.6</span>评委最可能问的 5 个问题</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:34%">问题</th><th>回答要点</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">这是真录音吗？</td><td>是，自己用手机录的。<strong>刻意保留底噪与手机麦克风的质感</strong>——这是「真实」的证据</td></tr>
+      <tr><td class="bold">声音定位是 SDK 自带还是你自己做的？</td><td>SDK 内建（HRTF 渲染 + <code>ObjectAudioComponent</code>）。<strong>我做的是「把声音映射成建筑」这一层</strong>——分析、分段、生成几何、挂声源</td></tr>
+      <tr><td class="bold">这套能用在游戏里吗？</td><td>能，<code>ObjectAudioComponent</code> 本来就是给游戏用的（官方文档的 VR 游戏用例就是这个）。<strong>我做的是「让声音变成可走进去的空间对象」</strong></td></tr>
+      <tr><td class="bold">你一个人做的？</td><td>是。<strong>作品可溯源：公开仓库 + 内核单测 + 安装包与 Commit ID 一一对应</strong>（评分本来就以安装包 + Commit ID 为依据）</td></tr>
+      <tr><td class="bold">和普通声音可视化有什么区别？</td><td>普通可视化是<strong>看</strong>频谱；这个是<strong>走进去</strong>，而且绕到背面声音真的变——屏幕做不到</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.7</span>立刻要做的三件事</h3>
+
+  <div class="takeaway"><span class="icon">1</span><span><strong>今天</strong>　进官方群问 6 问 + 加问「官方空间音频样例工程能否提供」+ 问 <strong>PICO 4 Ultra 能否跑 Spatial SDK</strong> 与预约窗口。<strong>这是当前最高优先级的未知。</strong></span></div>
+  <div class="takeaway"><span class="icon">2</span><span><strong>11.12 前</strong>　录 3 条 60 秒音频（朗读 / 街道 / 雨夜），<strong>朗读那条优先</strong>——有语义起伏，柱子才不一样</span></div>
+  <div class="takeaway"><span class="icon">3</span><span><strong>11.20 前</strong>　约一次真机（半小时也行）—— 只要能戴上头显听到「绕到柱后声音变闷」，这个方向就锁定了</span></div>
+
+  <h3><span class="num">8.8</span>提交前 48 小时检查清单</h3>
+
+  <p>锁版前逐项销账。<strong>官方正式评分以「安装包 + 对应 Commit ID」为依据</strong>，因此第 2 项与第 5 项是硬性的 —— 缺任何一条都会直接影响可评分性。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:8%" class="c">#</th><th style="width:34%">检查项</th><th style="width:12%" class="c">状态</th><th>判据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="c bold">1</td><td class="bold">安装包可安装</td><td class="c"><span class="pill pill-ok">□</span></td><td>卸载后重装成功，模拟器可启动并进入 Stage；无崩溃日志</td></tr>
+      <tr><td class="c bold">2</td><td class="bold">APK sha256 ↔ Commit ID 一一对应</td><td class="c"><span class="pill pill-ok">□</span></td><td>交包脚本输出对照表，提交包内含该表</td></tr>
+      <tr><td class="c bold">3</td><td class="bold">README 完整</td><td class="c"><span class="pill pill-ok">□</span></td><td>作品名 / 一句话 / 操作说明 / 技术栈 / 开源链接 / 素材来源</td></tr>
+      <tr><td class="c bold">4</td><td class="bold">30 分钟连续运行无崩溃</td><td class="c"><span class="pill pill-ok">□</span></td><td>准入门槛第 3 条。<strong>附完整 log 与时间戳</strong>（这项是硬门槛，不通过则作品根本不进正式评分）</td></tr>
+      <tr><td class="c bold">5</td><td class="bold">四个空间表面同框</td><td class="c"><span class="pill pill-ok">□</span></td><td>Stage + 3 副窗同时出内容；含一张可做概念图的真实截图</td></tr>
+      <tr><td class="c bold">6</td><td class="bold">演示视频就位</td><td class="c"><span class="pill pill-ok">□</span></td><td>60 秒内，含「显影开场 → 柱阵升起 → 转向找声源 → 绕到柱背」四拍</td></tr>
+      <tr><td class="c bold">7</td><td class="bold">报名信息核对</td><td class="c"><span class="pill pill-ok">□</span></td><td>赛道 PICO Spatial / 组长 = 本人 / 正式名单 ≤4 人 / 联合共建者署名</td></tr>
+      <tr><td class="c bold">8</td><td class="bold">提交物合规</td><td class="c"><span class="pill pill-ok">□</span></td><td>不含公司代码、ISP 参数表、内部文档、他人素材；模型与资产来源可追溯</td></tr>
+      <tr><td class="c bold">9</td><td class="bold">素材授权自洽</td><td class="c"><span class="pill pill-ok">□</span></td><td>音频为本人录制；街道录音无可识别人脸与清晰对话</td></tr>
+      <tr><td class="c bold">10</td><td class="bold">仓库干净</td><td class="c"><span class="pill pill-ok">□</span></td><td>无大文件、无构建产物、无密钥；提交信息逐字节无 BOM / 无 U+FFFD / 无 CRLF</td></tr>
+      <tr><td class="c bold">11</td><td class="bold">空间音频真机复测</td><td class="c"><span class="pill pill-ok">□</span></td><td>绕到柱背面能听出变化；转头能定位；混响参数可听出差异</td></tr>
+      <tr><td class="c bold">12</td><td class="bold">锁版时间</td><td class="c"><span class="pill pill-ok">□</span></td><td>12.18 内部验收完成，12.19 09:00 前留出 2 小时缓冲</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="num">8.9</span>交付节奏</h3>
+
+  <div class="timeline">
+    <div class="gen w1"><span class="tag">11.25</span><div class="key">首版交包</div><div class="note">APK + Commit 对照表 + README</div></div>
+    <div class="gen w2"><span class="tag">11.28</span><div class="key">功能闭环</div><div class="note">三副窗 + 5 组交互 + 自动演出</div></div>
+    <div class="gen w3"><span class="tag">12.06</span><div class="key">开源与溯源</div><div class="note">公开仓库 + 内核单测全绿</div></div>
+    <div class="gen w4"><span class="tag">12.12</span><div class="key">路演与演示片</div><div class="note">30 秒稿 + 3 分钟稿 + 60 秒片</div></div>
+    <div class="gen w4"><span class="tag">12.18</span><div class="key">内部验收定版</div><div class="note">§8.8 清单 12 项逐条销账</div></div>
+    <div class="gen w2"><span class="tag">12.19</span><div class="key">锁版提交</div><div class="note">09:00 截止，留 2 小时缓冲</div></div>
+  </div>
+
+  <table class="data avoid-break">
+    <thead>
+      <tr><th style="width:28%">交付物</th><th style="width:26%">形式</th><th style="width:16%" class="c">完成时点</th><th>去向</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">可安装包</td><td>APK（debug + release）</td><td class="c">11.25 / 12.18</td><td>赛事提交通道</td></tr>
+      <tr><td class="bold">安装包 ↔ Commit 对照表</td><td>脚本输出（sha256 + commit id + 时间）</td><td class="c">随每次交包</td><td>提交包内 + README 附录</td></tr>
+      <tr><td class="bold">README / 公开仓库</td><td>Markdown + GitHub（内核 + 单测）</td><td class="c">11.25 / 12.06</td><td>提交包内 + 开源加分</td></tr>
+      <tr><td class="bold">演示视频 / 概念图</td><td>MP4 60 秒内 + 真实运行截图</td><td class="c">12.12 / 12.05</td><td>提交材料 + 路演备用</td></tr>
+    </tbody>
+  </table>
+</section>

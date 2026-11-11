@@ -1,0 +1,75 @@
+<!-- ============================================================ -->
+<!-- 05 场景 · 交互 · 多窗口                                          -->
+<!-- ============================================================ -->
+<section class="content" id="sec-5">
+  <span class="section-num">CHAPTER 05 · 场景</span>
+  <h2 class="section">场景 · 交互 · 多窗口</h2>
+  <div class="section-line"></div>
+
+  <h3><span class="num">5.1</span>场景与视觉系统</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:16%">项</th><th style="width:34%">规格</th><th>为什么这么定</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">场景</td><td><strong>Stage 沉浸场景</strong>（不是窗口），style = Progressive，开场 immersion 0→100 推满</td><td>只有 Stage 能让声源绕着你走</td></tr>
+      <tr><td class="bold">柱体</td><td>八棱柱（比圆柱便宜，棱面在暗光下更出体积），底面固定在半径 1.6 m 的圆上</td><td>八棱柱有明确棱线，暗场里轮廓更硬朗</td></tr>
+      <tr><td class="bold">柱高</td><td>0.15 – 1.4 m，随该时间片能量线性映射</td><td>能量差异要肉眼可辨，否则「建筑」变成「栅栏」</td></tr>
+      <tr><td class="bold">配色</td><td>频段着色：低频深琥珀 / 中频橙 / 高频冷白。<strong>明暗与光照烘进贴图</strong></td><td>顶点色与方向光对自定义网格无效（已实测），必须烘焙</td></tr>
+      <tr><td class="bold">柱面纹理</td><td>24 频带能量竖条（128 列 → 24 格）</td><td>凑近看有细节 —— 「真做出来的」的可信信号</td></tr>
+      <tr><td class="bold">地面</td><td>半径 2.2 m 暗色圆盘，烘一圈同心光环（声呐），当前播放位置那圈亮起</td><td>空间化的进度条，比平面进度条更直觉</td></tr>
+      <tr><td class="bold">环境</td><td>暗场压到 12%，只有柱体与光环自发光</td><td>空间音频的听感依赖「没有别的东西分散注意力」</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <span class="label">视觉上的战略选择</span>
+    竞品三队的概念图全是<strong>高亮玻璃面板 + 浅灰 + 青绿</strong>（AI 出图最泛滥的风格）。<strong>我们反着来</strong> —— 深墨 + 琥珀 + 暗场。
+    这是四份材料里唯一的暗色系，辨识度直接拉满；而且暗场是空间音频听起来「就在耳边」的前提，审美与技术在这里是同一件事。
+  </div>
+
+  <h3><span class="num">5.2</span>交互清单（每条写死「可见反馈 + 降级路径」）</h3>
+
+  <p class="lead" style="margin-bottom:12px">规则：<strong>每个动作都必须有立刻可见的变化</strong>，且<strong>每个动作都必须有不用手势的降级路径</strong>。手势在真机验收之前，模拟器只保证「不崩、能自动演出」。</p>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:14%">交互</th><th style="width:22%">动作</th><th style="width:32%">可见反馈（缺一不可）</th><th>降级路径</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">聚拢</td><td>五指捏合 / 双手合拢</td><td>柱高压到 20%、半径收到 0.6 m、光晕收缩 —— <strong>形变必须肉眼可辨</strong>，不能只换颜色</td><td>主窗底部按钮「聚拢 / 展开」</td></tr>
+      <tr><td class="bold">划过</td><td>手指横切过某根柱</td><td>该柱亮起 + 其余 23 根降到 25% 亮度 + 顶部弹出标签（时间 / 频段 / 响度）</td><td>副窗 1 频谱环上点对应扇区</td></tr>
+      <tr><td class="bold">转盘</td><td>单手绕圈拖动</td><td>整个环旋转，柱子擦过你的位置；<strong>经过正前方的柱子时该柱音轨被提亮</strong></td><td>副窗 3 的方向拨盘</td></tr>
+      <tr><td class="bold">缩放</td><td>双手开合</td><td>环半径在 0.8–2.4 m 之间连续变化，柱距同步改变；<strong>距离衰减随之变化（能听出变远变近）</strong></td><td>副窗 3 滑杆</td></tr>
+      <tr><td class="bold">长按</td><td>按住柱顶 0.6 s</td><td>柱体炸开成 24 个小方块（频段分块），每块悬浮成一个可读标签</td><td>副窗 2「ROOM TONE」列表</td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight warn">
+    <span class="label">自动演出模式（强制要求）</span>
+    无人操作时，柱阵必须自己动：启动后自动播放、自动按能量呼吸、自动缓慢旋转 360°（每 20 秒一圈）、自动轮换 4 个活跃声源。
+    <strong>评委戴上头显的那一刻，画面不能是静止的。</strong>
+    这一条与「启动即自动铺开四窗」是同一条工程原理：<strong>演示不依赖任何一次点击。</strong>
+  </div>
+
+  <h3><span class="num">5.3</span>多窗口设计（Stage + 3 Planar）</h3>
+
+  <table class="data">
+    <thead>
+      <tr><th style="width:24%">窗口</th><th style="width:12%" class="c">形态</th><th style="width:30%">内容</th><th>作用</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="bold">Stage · SONOSPHERE</td><td class="c"><strong>Stage</strong></td><td>环形柱阵 + 地面光环 + Progressive 显影开场</td><td>作品本体</td></tr>
+      <tr><td class="bold">副窗 1 · SPECTRUM RING</td><td class="c">Planar</td><td>24 段频谱环，实时对应当前播放位置的能量</td><td>把「听觉」翻译成「视觉」，也是副窗 3 的锚点</td></tr>
+      <tr><td class="bold">副窗 2 · TIMELINE</td><td class="c">Planar</td><td>60 秒波形时间轴 + 24 个时间片标记 + 文字转录</td><td>让「这一分钟」有可读的时间结构</td></tr>
+      <tr><td class="bold">副窗 3 · ROOM TONE</td><td class="c">Planar</td><td>声源列表（哪根柱在响、多响）、混响参数、指向性参数、开关</td><td>把空间音频「工程化可见」，命中功能设计维度</td></tr>
+    </tbody>
+  </table>
+
+  <div class="specs avoid-break">
+    <div class="spec a"><b>四个独立空间表面</b>Stage + 3 个 WindowContainer，共享 <code>SessionBus</code>（已有工程，零改动复用）。官方硬指标「多窗口」不只是及格线，是评分维度里的交互体验基础。</div>
+    <div class="spec b"><b>副窗不是装饰</b>三层信息 = 频谱（听觉的视觉翻译）/ 时间（可读结构）/ 声学（工程参数可见）。这是「功能设计 25 分」的抓手。</div>
+    <div class="spec c"><b>Stage 的额外好处</b>沉浸场景可以把真实房间纳入构图 —— Progressive 推到 100 之前，观众是在自己的客厅里看柱子长出来。</div>
+  </div>
+</section>

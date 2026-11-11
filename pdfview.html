@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PDF page raster</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #8a8a8a; }
+  #cv { display: block; margin: 0; box-shadow: 0 0 8px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script type="module">
+  import * as pdfjsLib from './vendor/pdf.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs';
+  window.__scale = 1.6;
+  const res = await fetch('./声之建筑-落地方案.pdf');
+  const buf = await res.arrayBuffer();
+  window.__pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  window.__pageCount = window.__pdf.numPages;
+  window.__ready = true;
+</script>
+</body>
+</html>
