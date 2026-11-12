@@ -12,3 +12,7 @@ captures/
 *.jks
 .cxx/
 .kotlin/
+
+# 稳定性完整 logcat / 应用日志体积很大，只把 Markdown 报告和 CSV 采样纳入仓库
+stability/logcat-*.txt
+stability/applog-*.txt

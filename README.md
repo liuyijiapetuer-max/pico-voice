@@ -49,3 +49,14 @@ $cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd
 5. 无需把手离开「乐器」去频繁操作：演示会自动播；模式开关是一次性切换。
 
 若同一台模拟器上《曝光暗房》（`com.spatialcoach.sonosphere`）已在 Stage 中，请先强制停止该应用再启动本应用，否则启动检查可能失败。两个应用包名不同，不要互相覆盖安装。
+
+## Commit ↔ APK 对账（M2）
+
+已推送的 M2 源码提交是 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3)。本机构建的 debug APK（不进 git）为：
+
+- 路径：`G:\minimaxworkspace\pico-sonosphere\app\build\outputs\apk\debug\app-debug.apk`
+- 字节数：31,688,250
+- SHA256：`287009CBC2764E2F2C7E37E2019C0BC8893549F68DE032C85E71DC49356E5D1A`
+
+完整表格见 [reports/m2-commit-apk.md](reports/m2-commit-apk.md)。这是模拟器文件回放演示的对账，不是头显或实时拾音验收。
+
