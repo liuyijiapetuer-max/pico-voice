@@ -16,3 +16,5 @@ captures/
 # 稳定性完整 logcat / 应用日志体积很大，只把 Markdown 报告和 CSV 采样纳入仓库
 stability/logcat-*.txt
 stability/applog-*.txt
+# 官方通过轮次引用的应用日志（小文件）例外入库；完整 logcat 与中断轮次仍忽略
+!stability/applog-20261112-085904.txt

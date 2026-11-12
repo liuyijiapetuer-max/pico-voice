@@ -1,0 +1,112 @@
+--------- beginning of system
+11-12 08:59:02.528 I/ActivityManager(  834): Force stopping com.spatialcoach.sonosphere appid=10094 user=0: from pid 27101 from uid 2000
+11-12 08:59:02.531 I/ActivityManager(  834): Killing 11202:com.spatialcoach.sonosphere/u0a94 PRSmt{4b1fb11 p:0 rp:11202 t:null sa:0 sps:2 kt:0 fs:0 inSfile:false freezeBlockFlags:0 pendingInstallProviderCount:0 fm:INVALID} (adj 0): stop com.spatialcoach.sonosphere due to from pid 27101 from uid 2000
+11-12 08:59:02.753 W/ActivityManager(  834): setHasOverlayUi called on unknown pid: 11202
+11-12 08:59:02.827 I/ActivityManager(  834): Force stopping com.spatialcoach.soundarchitecture appid=10092 user=0: from pid 27176 from uid 2000
+11-12 08:59:03.815 W/ActivityManager(  834): beforeSendResourcesChangedBroadcast intent=Intent { act=android.intent.action.PICO_RESOURCES_CHANGED flg=0x10 xflg=0x4 (has extras) }, pkgList=[com.spatialcoach.soundarchitecture]
+11-12 08:59:05.133 W/ActivityManager(  834): registerReceiverWithFeature: no app for null
+11-12 08:59:05.180 I/ActivityManager(  834): Start proc 27199:com.spatialcoach.soundarchitecture/u0a92 for next-activity {com.spatialcoach.soundarchitecture/com.spatialcoach.soundarchitecture.platform.LaunchActivity}
+11-12 08:59:05.180 I/ActivityManager(  834): ProcessObserver broadcast disabled
+11-12 08:59:05.226 W/ActivityManager(  834): attachApplicationLocked appInfo (false) AppSpatialConfig{mPackageName='com.spatialcoach.soundarchitecture', mLaunchStyle='null', mEnable2dSpatial=true, mEnable2DMipmap=false, mHasAppLevelConfig=false, mEnableTapCompat=false, mSkipImeFrameFix=false, mTapCompatWindows=[], mConfigOrientation=1, mWidth=1080, mHeight=1920, mDensity=400, mTouchSlop=-1, mEnable2dSpatial=true, mDimBackground=false, mDisableShortcutRemap=false, mShortcutRemapFixed=false}
+--------- beginning of main
+11-12 08:59:05.389 I/SpatialPack(27199): [main] Found PICO OS version: 0.11.24
+11-12 08:59:05.392 I/SpatialPack(27199): [main] SpatialSDK Version Name: [6.1.9]
+11-12 08:59:05.394 I/SpatialPack(27199): [main] SpatialFoundation Version Name: [6.1.0-alpha.1-mol] CommitID: [7253c5a]
+11-12 08:59:05.399 I/SpatialPack(27199): [main] Spatial App attachment V2 enabled: false
+11-12 08:59:07.588 I/SpatialPack(27199): initializeEngine JNIEnv ptr: 0x760454a0dff0
+11-12 08:59:07.588 I/SpatialPack(27199): Current Spatial Loader SDK version is 6.1.0, commit a2fa365520
+11-12 08:59:07.601 I/SpatialPack(27199): SpatialPackLoader loaded success!
+11-12 08:59:07.601 I/SpatialPack(27199): SpatialApp retrieve session result 0
+11-12 08:59:07.693 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:07.812 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:09.173 I/SpatialPack(27199): Entity set name: SoundFieldRoot
+11-12 08:59:09.721 I/SpatialPack(27199): MeshResource::createWithMeshModel
+11-12 08:59:10.730 I/SpatialPack(27199): [main] new Thread:ST-Schedule-1
+11-12 08:59:10.741 I/SpatialPack(27199): Entity set name: SaBand_0
+11-12 08:59:10.748 I/SpatialPack(27199): Entity set name: SaBand_1
+11-12 08:59:10.748 I/SpatialPack(27199): Entity set name: SaBand_2
+11-12 08:59:10.749 I/SpatialPack(27199): Entity set name: SaBand_3
+11-12 08:59:10.750 I/SpatialPack(27199): Entity set name: SaBand_4
+11-12 08:59:10.751 I/SpatialPack(27199): Entity set name: SaBand_5
+11-12 08:59:10.754 I/SpatialPack(27199): Entity set name: SaBand_6
+11-12 08:59:10.755 I/SpatialPack(27199): Entity set name: SaBand_7
+11-12 08:59:10.755 I/SpatialPack(27199): Entity set name: SaBand_8
+11-12 08:59:10.756 I/SpatialPack(27199): Entity set name: SaBand_9
+11-12 08:59:10.758 I/SpatialPack(27199): Entity set name: SaBand_10
+11-12 08:59:10.758 I/SpatialPack(27199): Entity set name: SaBand_11
+11-12 08:59:10.760 I/SpatialPack(27199): Entity set name: SaBand_12
+11-12 08:59:10.760 I/SpatialPack(27199): Entity set name: SaBand_13
+11-12 08:59:10.761 I/SpatialPack(27199): Entity set name: SaBand_14
+11-12 08:59:10.761 I/SpatialPack(27199): Entity set name: SaBand_15
+11-12 08:59:10.762 I/SpatialPack(27199): Entity set name: SaBand_16
+11-12 08:59:10.763 I/SpatialPack(27199): Entity set name: SaBand_17
+11-12 08:59:10.763 I/SpatialPack(27199): Entity set name: SaBand_18
+11-12 08:59:10.764 I/SpatialPack(27199): Entity set name: SaBand_19
+11-12 08:59:10.765 I/SpatialPack(27199): Entity set name: SaBand_20
+11-12 08:59:10.765 I/SpatialPack(27199): Entity set name: SaBand_21
+11-12 08:59:10.766 I/SpatialPack(27199): Entity set name: SaBand_22
+11-12 08:59:10.767 I/SpatialPack(27199): Entity set name: SaBand_23
+11-12 08:59:10.767 I/SpatialPack(27199): Entity set name: SaBand_24
+11-12 08:59:10.768 I/SpatialPack(27199): Entity set name: SaBand_25
+11-12 08:59:10.769 I/SpatialPack(27199): Entity set name: SaBand_26
+11-12 08:59:10.771 I/SpatialPack(27199): Entity set name: SaBand_27
+11-12 08:59:10.771 I/SpatialPack(27199): Entity set name: SaBand_28
+11-12 08:59:10.772 I/SpatialPack(27199): Entity set name: SaBand_29
+11-12 08:59:10.772 I/SpatialPack(27199): Entity set name: SaBand_30
+11-12 08:59:10.773 I/SpatialPack(27199): Entity set name: SaBand_31
+11-12 08:59:10.773 I/SpatialPack(27199): Entity set name: SaBand_32
+11-12 08:59:10.774 I/SpatialPack(27199): Entity set name: SaBand_33
+11-12 08:59:10.774 I/SpatialPack(27199): Entity set name: SaBand_34
+11-12 08:59:10.776 I/SpatialPack(27199): Entity set name: SaBand_35
+11-12 08:59:11.720 I/SpatialPack(27199): MeshResource::createWithMeshModel
+11-12 08:59:11.762 I/SpatialPack(27199): Entity set name: SaPitchRuler
+11-12 08:59:11.763 I/SpatialPack(27199): Entity set name: SaTick_48
+11-12 08:59:11.765 I/SpatialPack(27199): Entity set name: SaTick_60
+11-12 08:59:11.766 I/SpatialPack(27199): Entity set name: SaTick_69
+11-12 08:59:11.766 I/SpatialPack(27199): Entity set name: SaTick_72
+11-12 08:59:11.767 I/SpatialPack(27199): Entity set name: SaTick_84
+11-12 08:59:12.762 I/SpatialPack(27199): Entity set name: SaTargetPitch
+11-12 08:59:12.762 I/SpatialPack(27199): Entity set name: SaCurrentPitch
+11-12 08:59:12.803 I/SpatialPack(27199): Entity set name: SaPitchError
+11-12 08:59:13.748 I/SpatialPack(27199): MeshResource::createWithMeshModel
+11-12 08:59:13.750 I/SpatialPack(27199): Entity set name: SaFloor
+11-12 08:59:13.790 I/SpatialPack(27199): [main] register SoundFieldSystem
+11-12 08:59:14.001 I/SpatialPack(27199): Entity set name: RootEntity_View_119624391200866413
+11-12 08:59:15.451 I/ActivityManager(  834): freezed hot/warm start: set svp pid 27199
+11-12 08:59:15.465 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:15.477 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:16.371 I/ActivityManager(  834): freezed hot/warm start: set svp pid 27199
+11-12 08:59:16.384 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:16.396 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:17.289 I/ActivityManager(  834): freezed hot/warm start: set svp pid 27199
+11-12 08:59:17.302 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 08:59:17.315 E/SpatialPack(27199): [main] There is no change of SpatialContainerInfo!
+11-12 09:01:19.018 E/ActivityManager(  834): Sending non-protected broadcast com.apm.setting.update.action from system 2032:com.picovr.settings/1000 PRSmt{3e0d601 p:0 rp:2032 t:null sa:915 usps:0 sps:19 kt:0 fs:0 inSfile:false freezeBlockFlags:0 pendingInstallProviderCount:0 fm:INVALID} pkg com.picovr.settings
+11-12 09:01:19.018 E/ActivityManager(  834): java.lang.Throwable
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.BroadcastController.checkBroadcastFromSystem(BroadcastController.java:2262)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.BroadcastController.broadcastIntentLockedTraced(BroadcastController.java:1742)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.BroadcastController.broadcastIntentLocked(BroadcastController.java:870)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.BroadcastController.broadcastIntentWithFeature(BroadcastController.java:803)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(ActivityManagerService.java:15854)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at android.app.IActivityManager$Stub.onTransact(IActivityManager.java:2976)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at com.android.server.am.ActivityManagerService.onTransact(ActivityManagerService.java:3048)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at android.os.Binder.execTransactInternal(Binder.java:1435)
+11-12 09:01:19.018 E/ActivityManager(  834): 	at android.os.Binder.execTransact(Binder.java:1374)
+11-12 09:02:59.869 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:02:59.873 W/ActivityManager(  834): onBringUpServiceLocked, com.bytedance.pico.matrix
+11-12 09:03:00.514 W/ActivityManager(  834): onBringUpServiceLocked, com.picoxr.coreservice
+11-12 09:08:41.576 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:08:41.585 W/ActivityManager(  834): onBringUpServiceLocked, android
+11-12 09:08:43.587 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:08:43.590 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:08:43.594 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:08:43.749 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:08:43.759 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:17:59.890 W/ActivityManager(  834): onBringUpServiceLocked, com.bytedance.pico.matrix
+11-12 09:18:52.381 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:18:52.390 W/ActivityManager(  834): onBringUpServiceLocked, com.picoxr.coreservice
+11-12 09:18:54.391 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:18:54.392 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:18:54.396 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:18:54.481 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker
+11-12 09:18:54.482 W/ActivityManager(  834): onBringUpServiceLocked, os.teatracker

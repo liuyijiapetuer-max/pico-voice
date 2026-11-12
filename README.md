@@ -60,3 +60,5 @@ $cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd
 
 完整表格见 [reports/m2-commit-apk.md](reports/m2-commit-apk.md)。这是模拟器文件回放演示的对账，不是头显或实时拾音验收。
 
+官方 30 分钟稳定性通过以 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3) 与 [stability/report-20261112-085904.md](stability/report-20261112-085904.md) 为准（emulator-5554，文件回放，不是头显，也不是继承任何旧通过）。
+
