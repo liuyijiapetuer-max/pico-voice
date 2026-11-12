@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 采集路径预留：M1 不在运行时申请，默认演示走文件回放。 -->
+    <!-- 采集路径预留：默认演示走文件回放，M2 不在启动时申请麦克风。 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
@@ -35,6 +35,96 @@
             <meta-data
                 android:name="pico.spatial.stage.upperlimb"
                 android:value="1" />
+        </activity>
+
+        <activity
+            android:name=".platform.SpectrumWindowActivity"
+            android:configChanges="screenLayout|screenSize|smallestScreenSize|orientation"
+            android:exported="true">
+            <meta-data
+                android:name="pico.spatial.windowcontainer.id"
+                android:value="SA_SpectrumWindow" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.style"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.defaultsize"
+                android:value="720x520" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizetype"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizerestriction"
+                android:value="0" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.worldscaletype"
+                android:value="2" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.captionbar"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.materialbackground"
+                android:value="0" />
+        </activity>
+
+        <activity
+            android:name=".platform.DynamicsWindowActivity"
+            android:configChanges="screenLayout|screenSize|smallestScreenSize|orientation"
+            android:exported="true">
+            <meta-data
+                android:name="pico.spatial.windowcontainer.id"
+                android:value="SA_DynamicsWindow" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.style"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.defaultsize"
+                android:value="720x520" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizetype"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizerestriction"
+                android:value="0" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.worldscaletype"
+                android:value="2" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.captionbar"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.materialbackground"
+                android:value="0" />
+        </activity>
+
+        <activity
+            android:name=".platform.CoachWindowActivity"
+            android:configChanges="screenLayout|screenSize|smallestScreenSize|orientation"
+            android:exported="true">
+            <meta-data
+                android:name="pico.spatial.windowcontainer.id"
+                android:value="SA_CoachWindow" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.style"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.defaultsize"
+                android:value="720x520" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizetype"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.resizerestriction"
+                android:value="0" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.worldscaletype"
+                android:value="2" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.captionbar"
+                android:value="1" />
+            <meta-data
+                android:name="pico.spatial.windowcontainer.materialbackground"
+                android:value="0" />
         </activity>
     </application>
 

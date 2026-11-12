@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SoundArchitecture" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@color/sonosphere_dark</item>
-        <item name="android:statusBarColor">@color/sonosphere_dark</item>
-        <item name="android:navigationBarColor">@color/sonosphere_dark</item>
+    <style name="Theme.SoundArchitecture" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/stage_dark</item>
+        <item name="android:statusBarColor">@color/stage_dark</item>
+        <item name="android:navigationBarColor">@color/stage_dark</item>
     </style>
 </resources>

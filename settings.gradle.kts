@@ -29,3 +29,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "SoundArchitecture"
 include(":app")
+
+include(":audio-core")
