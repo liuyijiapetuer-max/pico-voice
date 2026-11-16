@@ -81,5 +81,12 @@ fun SpectrumWindowContent() {
             Spacer(Modifier.height(8.dp))
             Text("刻度：125 · 250 · 500 · 1k · 2k · 4k Hz", color = WindowTheme.Ink, fontSize = 12.sp)
         }
+        val probe = AnalysisBus.probe
+        if (probe != null && probe.kind == com.spatialcoach.soundarchitecture.audio.InteractionProbe.Kind.FAN) {
+            Spacer(Modifier.height(8.dp))
+            Text(probe.readout(AnalysisBus.mode), color = WindowTheme.AmberDim, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(16.dp))
+        ModeToggle()
     }
 }

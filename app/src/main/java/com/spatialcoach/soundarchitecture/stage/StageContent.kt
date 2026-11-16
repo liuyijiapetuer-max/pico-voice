@@ -17,17 +17,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pico.spatial.ui.design.Text
 import com.pico.spatial.ui.foundation.content.SpatialView
+import com.pico.spatial.ui.foundation.gesture.TargetEntity
+import com.pico.spatial.ui.foundation.gesture.detectSpatialPointerEvent
 import com.pico.spatial.ui.foundation.dsl.registerSystem
 import com.pico.spatial.ui.foundation.dsl.unregisterSystem
 import com.pico.spatial.ui.platform.containers.LocalSpatialNavigator
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.FileDemoPlayer
+import com.spatialcoach.soundarchitecture.audio.StageInteraction
+import com.spatialcoach.soundarchitecture.audio.StageMapping
 import com.spatialcoach.soundarchitecture.audio.ViewMode
+import com.spatialcoach.soundarchitecture.ui.ModeToggle
 import com.spatialcoach.soundarchitecture.ui.WorkspaceWindows
 import kotlinx.coroutines.delay
 
@@ -87,7 +93,44 @@ fun StageContent() {
                 modifier = Modifier.align(Alignment.Center).padding(24.dp),
             )
         } else {
-            SpatialView(Modifier.fillMaxSize()) { content, _ ->
+            SpatialView(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(field) {
+                        detectSpatialPointerEvent(
+                            context,
+                            TargetEntity.any { entity ->
+                                val name = entity.getName() ?: return@any false
+                                StageMapping.isFanEntity(name) || StageMapping.isRulerEntity(name)
+                            },
+                        ) { infos ->
+                            val hit = infos.lastOrNull { it.targetedEntity != null } ?: infos.lastOrNull()
+                            if (hit == null) {
+                                if (infos.any { it.isUpEvent() }) AnalysisBus.clearFollow()
+                                return@detectSpatialPointerEvent false
+                            }
+                            val name = hit.targetedEntity?.getName()
+                            if (name.isNullOrEmpty()) {
+                                if (hit.isUpEvent() || !hit.pressed) AnalysisBus.clearFollow()
+                                return@detectSpatialPointerEvent false
+                            }
+                            val pressed = hit.pressed && !hit.isUpEvent()
+                            val result = StageInteraction.onHit(
+                                entityName = name,
+                                x = hit.x,
+                                y = hit.y,
+                                pressed = pressed,
+                                frame = AnalysisBus.frame,
+                            )
+                            if (result == null) {
+                                if (!pressed) AnalysisBus.clearFollow()
+                                return@detectSpatialPointerEvent false
+                            }
+                            AnalysisBus.updateProbe(result.first, result.second)
+                            true
+                        }
+                    },
+            ) { content, _ ->
                 content.addEntity(field.root)
                 content.addEntity(field.floorEntity)
             }
@@ -110,20 +153,25 @@ private fun StageHud(modifier: Modifier = Modifier) {
         Text("声之建筑", color = Color(0xFFE8C48A), fontSize = 16.sp)
         val cents = frame.cents
         val pitchHz = frame.pitchHz
-        val readout = if (mode == ViewMode.PROFESSIONAL && frame.noteName != null && pitchHz != null && cents != null) {
+        val probe = AnalysisBus.probe
+        val liveReadout = if (mode == ViewMode.PROFESSIONAL && frame.noteName != null && pitchHz != null && cents != null) {
             "${frame.noteName}  ${"%.1f".format(pitchHz)} Hz  ${"%.0f".format(cents)} 音分"
         } else {
             AnalysisBus.practiceCue.sentence
         }
-        Text(readout, color = Color(0xFFB8935C), fontSize = 14.sp)
-        Row(Modifier.padding(top = 8.dp)) {
+        Text(liveReadout, color = Color(0xFFB8935C), fontSize = 14.sp)
+        if (probe != null) {
             Text(
-                if (mode == ViewMode.PROFESSIONAL) "专业模式  ·  点这里切到练习" else "练习模式  ·  点这里切到专业",
+                probe.readout(mode),
                 color = Color(0xFFE8C48A),
                 fontSize = 13.sp,
-                modifier = Modifier.clickable { AnalysisBus.toggleMode() }.padding(end = 16.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
+            if (AnalysisBus.followingHand) {
+                Text("标记正在跟手，松开后回到当前音高", color = Color(0xFF8A97AD), fontSize = 11.sp)
+            }
         }
+        ModeToggle(Modifier.padding(top = 8.dp), color = Color(0xFFE8C48A))
         Text(
             "${if (playing) "正在回放" else "已暂停"}  ·  ${AnalysisBus.INPUT_LABEL}  ·  ${AnalysisBus.DEVICE_NOTE}",
             color = Color(0xFF8A97AD),

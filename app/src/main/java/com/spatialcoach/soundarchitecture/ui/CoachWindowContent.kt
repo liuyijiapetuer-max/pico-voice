@@ -48,14 +48,13 @@ fun CoachWindowContent() {
                 fontSize = 13.sp,
             )
         }
-        Spacer(Modifier.height(24.dp))
-        Row(Modifier.clickable { AnalysisBus.toggleMode() }.padding(8.dp)) {
-            Text(
-                if (practice) "切换到专业模式" else "切换到练习模式",
-                color = WindowTheme.Amber,
-                fontSize = 15.sp,
-            )
+        val probe = AnalysisBus.probe
+        if (probe != null) {
+            Spacer(Modifier.height(16.dp))
+            Text(probe.readout(AnalysisBus.mode), color = WindowTheme.AmberDim, fontSize = 14.sp)
         }
+        Spacer(Modifier.height(24.dp))
+        ModeToggle()
         Spacer(Modifier.height(16.dp))
         Text("${AnalysisBus.INPUT_LABEL}。${AnalysisBus.DEVICE_NOTE}。", color = WindowTheme.Ink, fontSize = 12.sp)
     }

@@ -1,6 +1,8 @@
 package com.spatialcoach.soundarchitecture.stage
 
 import com.pico.spatial.core.ecs.Entity
+import com.pico.spatial.core.ecs.HoverEffectComponent
+import com.pico.spatial.core.ecs.InteractableComponent
 import com.pico.spatial.core.ecs.ModelEntity
 import com.pico.spatial.core.ecs.TransformComponent
 import com.pico.spatial.core.ecs.resource.BlendingMode
@@ -10,6 +12,8 @@ import com.pico.spatial.core.ecs.resource.UnlitMaterial
 import com.pico.spatial.core.math.EulerAngles
 import com.pico.spatial.core.math.Vector3
 import com.spatialcoach.soundarchitecture.audio.AnalysisFrame
+import com.spatialcoach.soundarchitecture.audio.InteractionProbe
+import com.spatialcoach.soundarchitecture.audio.StageMapping
 import com.spatialcoach.soundarchitecture.audio.Tuning
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 import kotlin.math.PI
@@ -32,6 +36,8 @@ class SoundField {
     private val ticks: List<ModelEntity>
     private val errorStem: ModelEntity
     private val floor: ModelEntity
+    private val probeMarker: ModelEntity
+    private val rulerHit: ModelEntity
 
     init {
         val wedgeModel = SoundMeshes.unitWedge(WEDGE_SPAN)
@@ -129,14 +135,45 @@ class SoundField {
             setName("SaFloor")
             components[TransformComponent::class.java]?.setPosition(Vector3(0f, FLOOR_Y, 0f))
         }
+
+        val probeMat = UnlitMaterial.create(BlendingMode.TRANSPARENT).apply {
+            setBaseColorTexture(SolidTextures.color(0xCCF3D5A0.toInt()))
+            setCullingMode(MaterialCullingMode.NONE)
+            setOpacity(0.9f)
+        }
+        probeMarker = ModelEntity(sphere, probeMat).apply {
+            setName("SaProbePitch")
+            components[TransformComponent::class.java]?.apply {
+                setPosition(Vector3(0f, pitchY(69.0), RULER_Z))
+                setScaleVector(Vector3(0.01f, 0.01f, 0.01f))
+            }
+            root.addChild(this)
+        }
+
+        val hitMat = UnlitMaterial.create(BlendingMode.TRANSPARENT).apply {
+            setBaseColorTexture(SolidTextures.color(0x11E8C48A.toInt()))
+            setCullingMode(MaterialCullingMode.NONE)
+            setOpacity(0.04f)
+        }
+        rulerHit = ModelEntity(rodRes, hitMat).apply {
+            setName("SaPitchRulerHit")
+            components[TransformComponent::class.java]?.apply {
+                setPosition(Vector3(0f, FLOOR_Y + StageMapping.Y_BASE + StageMapping.Y_SPAN / 2f, RULER_Z))
+                setScaleVector(Vector3(0.28f, StageMapping.Y_SPAN + 0.2f, 0.12f))
+            }
+            root.addChild(this)
+        }
+
+        enableInteraction()
     }
 
     val floorEntity: Entity get() = floor
 
-    fun apply(frame: AnalysisFrame, mode: ViewMode) {
+    fun apply(frame: AnalysisFrame, mode: ViewMode, probe: InteractionProbe?, following: Boolean) {
         val grow = dynamicsScale(frame.dbfs)
         updateWedges(frame, mode, grow)
-        updatePitch(frame)
+        updatePitch(frame, probe, following)
+        updateProbeMarker(probe, following)
     }
 
     private fun updateWedges(frame: AnalysisFrame, mode: ViewMode, grow: Float) {
@@ -155,21 +192,24 @@ class SoundField {
         }
     }
 
-    private fun updatePitch(frame: AnalysisFrame) {
+    private fun updatePitch(frame: AnalysisFrame, probe: InteractionProbe?, following: Boolean) {
         val targetMidi = frame.midi?.toDouble() ?: 69.0
         val currentMidi = if (frame.pitchHz != null) Tuning.midiFromHz(frame.pitchHz!!) else null
         val targetY = pitchY(targetMidi)
         val currentY = pitchY(currentMidi ?: targetMidi)
         // 音分误差同时做成左右偏移：右偏高、左偏低，垂直方向仍是音高位置。
-        val xOffset = ((frame.cents ?: 0.0) / 50.0).toFloat().coerceIn(-0.35f, 0.35f)
+        val xOffset = StageMapping.xFromCents(frame.cents ?: 0.0)
         val visible = frame.pitchHz != null
         targetMarker.components[TransformComponent::class.java]?.apply {
             setPosition(Vector3(0f, targetY, RULER_Z))
             setScaleVector(if (visible) Vector3(1f, 1f, 1f) else Vector3(0.4f, 0.4f, 0.4f))
         }
+        val follow = following && probe?.kind == InteractionProbe.Kind.RULER && probe.followX != null && probe.followY != null
+        val markerX = if (follow) probe!!.followX!! else xOffset
+        val markerY = if (follow) probe!!.followY!! else currentY
         currentMarker.components[TransformComponent::class.java]?.apply {
-            setPosition(Vector3(xOffset, currentY, RULER_Z))
-            setScaleVector(if (visible) Vector3(1.15f, 1.15f, 1.15f) else Vector3(0.01f, 0.01f, 0.01f))
+            setPosition(Vector3(markerX, markerY, RULER_Z))
+            setScaleVector(if (visible || follow) Vector3(1.15f, 1.15f, 1.15f) else Vector3(0.01f, 0.01f, 0.01f))
         }
         val midY = (targetY + currentY) / 2f
         val stemH = abs(currentY - targetY).coerceAtLeast(0.02f)
@@ -182,41 +222,46 @@ class SoundField {
         }
     }
 
-    private fun bandEnergy(spectrum: FloatArray, hzPerBin: Double, index: Int): Float {
-        val minHz = 80.0
-        val maxHz = 8000.0
-        val t0 = index / BANDS.toDouble()
-        val t1 = (index + 1) / BANDS.toDouble()
-        val f0 = minHz * (maxHz / minHz).pow(t0)
-        val f1 = minHz * (maxHz / minHz).pow(t1)
-        val i0 = (f0 / hzPerBin).toInt().coerceIn(0, spectrum.lastIndex)
-        val i1 = (f1 / hzPerBin).toInt().coerceIn(i0 + 1, spectrum.size)
-        var peak = 0f
-        for (i in i0 until i1) peak = maxOf(peak, spectrum[i])
-        // 轻量压缩，避免某一带顶满
-        return (peak * 8f).coerceIn(0f, 1f)
-    }
+    private fun bandEnergy(spectrum: FloatArray, hzPerBin: Double, index: Int): Float =
+        StageMapping.bandEnergy(spectrum, hzPerBin, index)
 
     private fun dynamicsScale(dbfs: Double): Float {
         val t = ((dbfs + 48.0) / 48.0).coerceIn(0.0, 1.0)
         return (0.45 + 0.7 * t).toFloat()
     }
 
-    private fun pitchY(midi: Double): Float {
-        val t = ((midi - 48.0) / 36.0).toFloat()
-        return FLOOR_Y + 0.55f + t.coerceIn(0f, 1f) * 1.25f
+
+    private fun updateProbeMarker(probe: InteractionProbe?, following: Boolean) {
+        val show = probe?.kind == InteractionProbe.Kind.RULER
+        val x = if (show) (probe?.followX ?: StageMapping.xFromCents(probe?.cents ?: 0.0)) else 0f
+        val y = if (show) (probe?.followY ?: StageMapping.yFromMidi(probe?.midi ?: 69.0)) else pitchY(69.0)
+        probeMarker.components[TransformComponent::class.java]?.apply {
+            setPosition(Vector3(x, y, RULER_Z))
+            setScaleVector(if (show && !following) Vector3(0.85f, 0.85f, 0.85f) else Vector3(0.01f, 0.01f, 0.01f))
+        }
     }
 
-    private fun startDeg(): Float = -FAN_SPAN_DEG / 2f
-    private fun stepDeg(): Float = FAN_SPAN_DEG / BANDS
+    private fun enableInteraction() {
+        val targets = wedges + ticks + listOf(ruler, rulerHit, targetMarker, currentMarker, errorStem, probeMarker)
+        for (entity in targets) {
+            entity.components[InteractableComponent::class.java] = InteractableComponent()
+            entity.components[HoverEffectComponent::class.java] = HoverEffectComponent()
+            runCatching { entity.createCollisionShapes(true) }
+        }
+    }
+
+    private fun pitchY(midi: Double): Float = StageMapping.yFromMidi(midi)
+
+    private fun startDeg(): Float = StageMapping.startDeg()
+    private fun stepDeg(): Float = StageMapping.stepDeg()
 
     companion object {
-        const val BANDS = 36
-        const val FAN_SPAN_DEG = 120f
+        const val BANDS = StageMapping.BANDS
+        const val FAN_SPAN_DEG = StageMapping.FAN_SPAN_DEG
         val WEDGE_SPAN: Float = (FAN_SPAN_DEG / BANDS) * (PI.toFloat() / 180f)
         const val RADIUS_SCALE = 1.05f
-        const val FLOOR_Y = 0f
-        const val RULER_Z = -1.25f
+        const val FLOOR_Y = StageMapping.FLOOR_Y
+        const val RULER_Z = StageMapping.RULER_Z
         const val RULER_HEIGHT = 1.9f
     }
 }

@@ -73,5 +73,7 @@ fun DynamicsWindowContent() {
                 Text("距上一拍 ${it} ms", color = WindowTheme.Ink, fontSize = 13.sp)
             }
         }
+        Spacer(Modifier.height(16.dp))
+        ModeToggle()
     }
 }

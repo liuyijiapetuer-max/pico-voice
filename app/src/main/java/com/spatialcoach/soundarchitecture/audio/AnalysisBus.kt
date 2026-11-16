@@ -22,6 +22,12 @@ object AnalysisBus {
 
     var errorMessage by mutableStateOf<String?>(null)
 
+    var probe by mutableStateOf<InteractionProbe?>(null)
+        private set
+
+    var followingHand by mutableStateOf(false)
+        private set
+
     val practiceCue: PracticeCue
         get() = PracticeCoach.cue(frame)
 
@@ -36,4 +42,14 @@ object AnalysisBus {
     fun markPlaying(value: Boolean) {
         playing = value
     }
+
+    fun updateProbe(next: InteractionProbe?, following: Boolean) {
+        probe = next
+        followingHand = following
+    }
+
+    fun clearFollow() {
+        followingHand = false
+    }
 }
+
