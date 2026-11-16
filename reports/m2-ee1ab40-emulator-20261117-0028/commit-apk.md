@@ -1,0 +1,21 @@
+# 《声之建筑》Commit <-> APK 对账（ee1ab40，今晚重建）
+
+- 记录时间：2026-11-17 00:28 Asia/Shanghai
+- 机器：SPACE
+- 源码 HEAD：ee1ab403db2a9ba507b54f8aac80e4a84d2fed3c
+- 短哈希：ee1ab40
+- 提交说明：feat: 舞台扇面与音高尺空间交互，并一键切换专业/练习
+- 提交时间：2026-11-16 22:56:53 +0800
+- 构建命令：JAVA_HOME=E:\software\Dev\androidstudio\androidStudio\jbr ； gradle 8.13 --no-daemon :audio-core:test :app:assembleDebug
+- 首次构建：2026-11-17 00:26:04-00:26:58 Asia/Shanghai，BUILD SUCCESSFUL in 52s。:audio-core:test 当时为 UP-TO-DATE（缓存自 2026-11-16 22:56:30 Asia/Shanghai）
+- 强制重跑单测：gradle --no-daemon :audio-core:test --rerun-tasks，2026-11-17 00:27:47 Asia/Shanghai，BUILD SUCCESSFUL in 23s，4 tasks executed
+- 单测结果：AnalysisEngineTest 12 通过，StageMappingTest 8 通过，失败 0，错误 0，跳过 0
+- APK 路径（构建产物）：G:\minimaxworkspace\pico-sonosphere\app\build\outputs\apk\debug\app-debug.apk
+- APK 副本：reports\m2-ee1ab40-emulator-20261117-0028\apk\app-debug-ee1ab40.apk
+- 字节数：31688250（与旧包 8ba442c 字节数相同，但是不同哈希，不是同一个包）
+- SHA256：EF774371B45129596F12F134CB196CBA811E1651235BDDE94D8159790D50AE3D
+- mtime：2026-11-17 00:26:57 Asia/Shanghai
+- 旧包对照：2026-11-12 08:02 Asia/Shanghai，SHA256 287009CBC2764E2F2C7E37E2019C0BC8893549F68DE032C85E71DC49356E5D1A，对应 8ba442c，不含今晚提交
+- 包名要求：com.spatialcoach.soundarchitecture
+- 输入口径：文件回放（合成音轨）。不得写成 V-10 实时采集已通过。未校准幅度不得写 dB SPL。
+- 30 分钟稳定性：本目录不继承 stability/report-20261112-085904.md。

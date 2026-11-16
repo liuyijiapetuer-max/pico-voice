@@ -1,0 +1,79 @@
+---
+pid: 45996
+cwd: "G:\\minimaxworkspace\\pico-sonosphere"
+command: "$env:JAVA_HOME='E:\\software\\Dev\\androidstudio\\androidStudio\\jbr'; $gradle='G:\\minimaxworkspace\\pico-spatial-2026\\prototype\\gradle-dist\\gradle-8.13\\bin\\gradle.bat'; Write-Host \"JAVA_HOME=$env:JAVA_HOME\"; Write-Host \"gradle=$gradle\"; Test-Path $gradle; Test-Path \"$env:JAVA_HOME\\bin\\java.exe\"; Set-Location 'G:\\minimaxworkspace\\pico-sonosphere'; & $gradle --no-daemon :audio-core:test :app:assembleDebug --console=plain"
+title: "Rebuild soundarchitecture tests and debug APK"
+status: succeeded
+started_at: 2026-11-16T16:26:04.556Z
+running_for_ms: 53578    
+---
+JAVA_HOME=E:\software\Dev\androidstudio\androidStudio\jbr
+gradle=G:\minimaxworkspace\pico-spatial-2026\prototype\gradle-dist\gradle-8.13\bin\gradle.bat
+True
+True
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :audio-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :audio-core:compileKotlin UP-TO-DATE
+> Task :audio-core:compileJava NO-SOURCE
+> Task :audio-core:processResources NO-SOURCE
+> Task :audio-core:classes UP-TO-DATE
+> Task :audio-core:jar UP-TO-DATE
+> Task :audio-core:compileTestKotlin UP-TO-DATE
+> Task :audio-core:compileTestJava NO-SOURCE
+> Task :audio-core:processTestResources NO-SOURCE
+> Task :audio-core:testClasses UP-TO-DATE
+> Task :audio-core:test UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:processDebugJavaRes
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+
+BUILD SUCCESSFUL in 52s
+40 actionable tasks: 6 executed, 34 up-to-date
+
+---
+exit_code: 0
+elapsed_ms: 53578
+ended_at: 2026-11-16T16:26:58.134Z
+---
