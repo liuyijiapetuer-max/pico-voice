@@ -11,6 +11,12 @@ object Signals {
 
     fun silence(samples: Int): FloatArray = FloatArray(samples)
 
+    fun whiteNoise(samples: Int, amplitude: Double = 0.3, seed: Long = 1L): FloatArray {
+        val rng = java.util.Random(seed)
+        return FloatArray(samples) { ((rng.nextDouble() * 2.0 - 1.0) * amplitude).toFloat() }
+    }
+
+
     fun impulses(sampleRate: Int, count: Int, intervalMs: Long, amplitude: Float = 0.9f): FloatArray {
         val interval = (sampleRate * intervalMs / 1000L).toInt().coerceAtLeast(1)
         val width = (sampleRate * 0.008).toInt().coerceAtLeast(4)

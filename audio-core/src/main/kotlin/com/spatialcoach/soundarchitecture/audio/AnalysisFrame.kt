@@ -13,6 +13,7 @@ package com.spatialcoach.soundarchitecture.audio
  * @param onset 本帧是否检出起音
  * @param onsetIntervalMs 与上一拍的间隔；尚无两拍时为 null
  * @param rhythmStability 近几次起音间隔的规整程度，0..1
+ * @param pitchConfidence 音高置信度；拒答时为 null
  */
 data class AnalysisFrame(
     val timestampMs: Long,
@@ -29,6 +30,8 @@ data class AnalysisFrame(
     val onset: Boolean,
     val onsetIntervalMs: Long?,
     val rhythmStability: Double?,
+    /** YIN 周期置信度 0..1；未检出或低于门槛时为 null。 */
+    val pitchConfidence: Double? = null,
 ) {
     companion object {
         fun silent(timestampMs: Long = 0L, sampleRate: Int = 44_100, bins: Int = 1024): AnalysisFrame =
@@ -47,6 +50,7 @@ data class AnalysisFrame(
                 onset = false,
                 onsetIntervalMs = null,
                 rhythmStability = null,
+                pitchConfidence = null,
             )
     }
 }

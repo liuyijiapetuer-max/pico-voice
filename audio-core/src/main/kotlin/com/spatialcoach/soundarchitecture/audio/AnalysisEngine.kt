@@ -9,6 +9,13 @@ class AnalysisEngine(
     val fftSize: Int = 2048,
     val hopSize: Int = 512,
 ) {
+    companion object {
+        /** RMS 低于此值视为无声，不给出确定音高。 */
+        const val VOICED_RMS = 0.01
+        /** YIN periodicity 低于此值视为低置信，专业/练习/舞台同一帧拒答。 */
+        const val MIN_PITCH_CONFIDENCE = 0.70
+    }
+
     init {
         require(Fft.isPowerOfTwo(fftSize))
         require(hopSize > 0 && hopSize <= fftSize)
@@ -74,9 +81,9 @@ class AnalysisEngine(
         val dynamics = DynamicsTracker.measure(samples)
         val spectrum = Fft.magnitudeSpectrum(samples, window)
         val hzPerBin = sampleRate.toDouble() / fftSize
-        val voiced = dynamics.rms > 0.01
-        val pitch = if (voiced) pitchTracker.estimate(samples) else null
-        val hz = pitch?.frequencyHz
+        val estimate = if (dynamics.rms > VOICED_RMS) pitchTracker.estimate(samples) else null
+        val accepted = estimate?.takeIf { it.periodicity >= MIN_PITCH_CONFIDENCE }
+        val hz = accepted?.frequencyHz
         val midi = hz?.let { Tuning.nearestMidi(it) }
         val name = midi?.let { Tuning.noteName(it) }
         val cents = hz?.let { Tuning.centsFromNearest(it) }
@@ -96,6 +103,7 @@ class AnalysisEngine(
             onset = onset.onset,
             onsetIntervalMs = onset.intervalMs,
             rhythmStability = onset.stability,
+            pitchConfidence = accepted?.periodicity,
         )
     }
 }

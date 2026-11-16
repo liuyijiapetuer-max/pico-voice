@@ -1,6 +1,7 @@
 package com.spatialcoach.soundarchitecture.audio
 
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -89,4 +90,49 @@ class AnalysisEngineTest {
         val frame = engine.analyze(decoded)
         assertEquals("A4", frame.noteName)
     }
+
+    @Test
+    fun a4SharpTwentyFiveCentsStaysA4AndPositive() {
+        val hz = Tuning.A4_HZ * 2.0.pow(25.0 / 1200.0)
+        val frame = engine.analyze(Signals.sine(hz, sampleRate, fftSize, 0.5))
+        assertEquals("A4", frame.noteName)
+        assertNotNull(frame.cents)
+        assertNotNull(frame.pitchHz)
+        assertTrue(frame.cents!! > 0.0, "cents=${frame.cents}")
+        assertTrue(abs(frame.cents!! - 25.0) <= 8.0, "cents=${frame.cents} hz=${frame.pitchHz}")
+        assertNotNull(frame.pitchConfidence)
+        assertTrue(frame.pitchConfidence!! >= AnalysisEngine.MIN_PITCH_CONFIDENCE)
+    }
+
+    @Test
+    fun a4FlatTwentyFiveCentsStaysA4AndNegative() {
+        val hz = Tuning.A4_HZ * 2.0.pow(-25.0 / 1200.0)
+        val frame = engine.analyze(Signals.sine(hz, sampleRate, fftSize, 0.5))
+        assertEquals("A4", frame.noteName)
+        assertNotNull(frame.cents)
+        assertTrue(frame.cents!! < 0.0, "cents=${frame.cents}")
+        assertTrue(abs(frame.cents!! + 25.0) <= 8.0, "cents=${frame.cents} hz=${frame.pitchHz}")
+    }
+
+    @Test
+    fun whiteNoiseHasNoDefinitePitchAndCoachAbstains() {
+        val frame = engine.analyze(Signals.whiteNoise(fftSize, amplitude = 0.3, seed = 1L))
+        assertNull(frame.pitchHz)
+        assertNull(frame.noteName)
+        assertNull(frame.cents)
+        assertNull(frame.midi)
+        assertNull(frame.pitchConfidence)
+        val cue = PracticeCoach.cue(frame)
+        assertTrue("听不到稳定音高" in cue.pitchLabel, "pitchLabel=${cue.pitchLabel}")
+    }
+
+    @Test
+    fun quietBelowGateHasNoPitch() {
+        val frame = engine.analyze(Signals.sine(Tuning.A4_HZ, sampleRate, fftSize, 0.005))
+        assertTrue(frame.rms < AnalysisEngine.VOICED_RMS, "rms=${frame.rms}")
+        assertNull(frame.pitchHz)
+        assertNull(frame.cents)
+        assertNull(frame.pitchConfidence)
+    }
+
 }
