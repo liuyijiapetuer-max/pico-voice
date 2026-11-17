@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.sp
 import com.pico.spatial.ui.design.Text
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.ViewMode
-import kotlin.math.abs
 
 @Composable
 fun DynamicsWindowContent() {
@@ -70,7 +69,7 @@ fun DynamicsWindowContent() {
                 Text("起音", color = WindowTheme.Good, fontSize = 14.sp)
             }
             frame.onsetIntervalMs?.let {
-                Text("距上一拍 ${it} ms", color = WindowTheme.Ink, fontSize = 13.sp)
+                Text("距上次起音 ${it} ms", color = WindowTheme.Ink, fontSize = 13.sp)
             }
         }
         Spacer(Modifier.height(16.dp))

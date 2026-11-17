@@ -1,10 +1,8 @@
 package com.spatialcoach.soundarchitecture.stage
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -30,11 +28,15 @@ import com.pico.spatial.ui.foundation.dsl.unregisterSystem
 import com.pico.spatial.ui.platform.containers.LocalSpatialNavigator
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.FileDemoPlayer
+import com.spatialcoach.soundarchitecture.audio.PracticeSessionPlayer
+import com.spatialcoach.soundarchitecture.audio.PracticeSessionRequest
 import com.spatialcoach.soundarchitecture.audio.StageInteraction
 import com.spatialcoach.soundarchitecture.audio.StageMapping
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 import com.spatialcoach.soundarchitecture.ui.ModeToggle
 import com.spatialcoach.soundarchitecture.ui.WorkspaceWindows
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 
 @Composable
@@ -45,6 +47,11 @@ fun StageContent() {
     var error by remember { mutableStateOf<String?>(null) }
     val player = remember {
         FileDemoPlayer(context) { frame ->
+            AnalysisBus.publish(frame)
+        }
+    }
+    val practicePlayer = remember {
+        PracticeSessionPlayer(context) { frame ->
             AnalysisBus.publish(frame)
         }
     }
@@ -63,6 +70,31 @@ fun StageContent() {
             }
     }
 
+    val practiceRequest = AnalysisBus.practiceRequest
+    LaunchedEffect(practiceRequest?.id) {
+        val request = practiceRequest ?: return@LaunchedEffect
+        when (request.action) {
+            PracticeSessionRequest.Action.PLAY -> {
+                val rendition = request.rendition ?: return@LaunchedEffect
+                player.stop()
+                AnalysisBus.markPlaying(true)
+                val frames = withContext(Dispatchers.IO) {
+                    practicePlayer.play(rendition)
+                }
+                if (frames == null) {
+                    AnalysisBus.onPracticeCancelled()
+                } else {
+                    AnalysisBus.completePractice(frames, rendition, request.storeAs)
+                }
+            }
+            PracticeSessionRequest.Action.RESUME_DEMO -> {
+                practicePlayer.stop()
+                player.start()
+                AnalysisBus.markPlaying(true)
+            }
+        }
+    }
+
     // 副窗必须错开打开，后一扇才能锚到前一扇，否则会叠在一起。
     LaunchedEffect(Unit) {
         delay(1500)
@@ -79,6 +111,7 @@ fun StageContent() {
         onDispose {
             unregisterSystem<SoundFieldSystem>()
             SoundFieldRuntime.uninstall()
+            practicePlayer.stop()
             player.stop()
             AnalysisBus.markPlaying(false)
         }
@@ -168,7 +201,7 @@ private fun StageHud(modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(top = 4.dp),
             )
             if (AnalysisBus.followingHand) {
-                Text("标记正在跟手，松开后回到当前音高", color = Color(0xFF8A97AD), fontSize = 11.sp)
+                Text("标记正在跟手，松开后回到当前音高。这是查看，不是修音。", color = Color(0xFF8A97AD), fontSize = 11.sp)
             }
         }
         ModeToggle(Modifier.padding(top = 8.dp), color = Color(0xFFE8C48A))
@@ -178,5 +211,13 @@ private fun StageHud(modifier: Modifier = Modifier) {
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp),
         )
+        if (AnalysisBus.demoPausedForPractice) {
+            Text(
+                "练习片段会话进行中或待恢复演示。${AnalysisBus.REVIEW_NOTE}",
+                color = Color(0xFF8A97AD),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }

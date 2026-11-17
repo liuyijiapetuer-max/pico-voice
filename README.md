@@ -13,6 +13,27 @@
 - 同一套分析结果，一个开关两种模式。专业模式给出音分、频谱、动态的刻度或数值；练习模式只保留音准、节奏、强弱和一句人话。
 - 主舞台：前方扇面随频谱和力度起伏；目标音是空间里的位置，音准误差用上下和左右的空间偏移表示。右侧频谱窗、左侧动态窗、下方练习提示窗，启动后会错开打开。不是 24 柱回放，也不是纯灯光秀。
 
+## 演奏复验
+
+练习窗增加「演奏复验」：把一段单旋律切成可追溯的音符事件（时间、音名、第几拍、音分与毫秒偏差），并在同一参考上比较第一遍与重奏的音准、节奏分项。
+
+- 当前只支持内置合成练习片段 `practice-melody-v1`（120 BPM，节拍原点 0 ms，四拍 A4–C5–G4–E4）。不是用户自选文件，也不是真麦。界面已写明「文件回放（合成音轨）」。
+- 「第几拍」只在有显式 BPM 和原点时填写；没有节拍参考时为「无节拍参考」。起音间隔不再称作「拍」。
+- 相对最近律音的音分不等于谱面目标。目标未知时不判错音。缺音、多音、错音、未对齐会分开列出，不用总分代替分项，也不扣除整段统一延迟。
+- 只做单旋律。慢滑音会标成不够稳定，不伪装成确定音列。不做复调，也不自动跟谱。舞台上拖动音高尺仍只是查看，不是 DSP 修音。
+- 操作：打开下方练习提示窗 →「播放参考」或「记为第一遍」（内置含偏差示范）→「记为重奏」（内置已改善示范）→「比较第一遍与重奏」。看完后可用「恢复舞台演示回放」。演示播放循环时会重置分析引擎，避免跨圈污染起音间隔。
+- 验证方式（不要跑 `assembleDebug`，以免覆盖现有 ee1ab40 APK）：
+
+```powershell
+$env:JAVA_HOME='E:\software\Dev\androidstudio\androidStudio\jbr'
+$env:ANDROID_HOME='C:\Users\11574\AppData\Local\Android\Sdk'
+$gradle='G:\minimaxworkspace\pico-spatial-2026\prototype\gradle-dist\gradle-8.13\bin\gradle.bat'
+Set-Location 'G:\minimaxworkspace\pico-sonosphere'
+& $gradle --no-daemon :audio-core:test :app:compileDebugKotlin --console=plain
+```
+
+更完整的证据与未验项见 [reports/practice-review-20261117/](reports/practice-review-20261117/)。本项未装机、未头显、未实时麦、未出新 APK、未跑 30 分钟稳定性。
+
 文案把「能演示」和「已真机验证」分开。下面的操作说明是模拟器上的文件回放演示，模拟器没有真麦。
 
 ## 构建与安装

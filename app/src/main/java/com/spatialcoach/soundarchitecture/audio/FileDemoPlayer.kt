@@ -70,7 +70,11 @@ class FileDemoPlayer(
             var cursor = 0
             try {
                 while (running.get()) {
-                    if (cursor >= samples.size) cursor = 0
+                    if (cursor >= samples.size) {
+                        cursor = 0
+                        // 跨圈必须重置起音状态，避免把结尾到开头的间隔当成节奏。
+                        engine.reset()
+                    }
                     val n = minOf(hop, samples.size - cursor)
                     val slice = FloatArray(n)
                     for (i in 0 until n) {
