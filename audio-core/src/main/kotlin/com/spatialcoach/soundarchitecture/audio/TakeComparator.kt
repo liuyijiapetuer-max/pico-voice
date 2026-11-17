@@ -448,8 +448,22 @@ object TakeComparator {
         out += "以下建议来自与参考片段的对照，不是自动修音或 DSP 处理。"
         out += ReviewText.WINDOW_BIAS_NOTE
         if (b == null) {
+            if (!a.coverage.countsDeterminate) {
+                out += ReviewText.INDETERMINATE_COUNTS_ADVICE
+                out += ReviewText.RERECORD_CONDITION
+                return out
+            }
             out += takeAdvice(a, "这一遍")
             out += coverageLine("这一遍", a)
+            return out
+        }
+        if (!a.coverage.countsDeterminate || !b.coverage.countsDeterminate) {
+            out += ReviewText.INDETERMINATE_COUNTS_ADVICE
+            out += ReviewText.RERECORD_CONDITION
+            val why = listOfNotNull(a.coverage.countabilityReason, b.coverage.countabilityReason)
+                .distinct()
+                .filter { it.isNotBlank() }
+            if (why.isNotEmpty()) out += why.joinToString(" ")
             return out
         }
         out += coverageLine("第一遍", a)
@@ -542,6 +556,9 @@ object TakeComparator {
     }
 
     private fun takeAdvice(alignment: TakeAlignment, label: String): List<String> {
+        if (!alignment.coverage.countsDeterminate) {
+            return listOf(ReviewText.INDETERMINATE_COUNTS_ADVICE, ReviewText.RERECORD_CONDITION)
+        }
         val lines = ArrayList<String>()
         for (item in alignment.items) {
             val beat = item.refBeatIndex?.let { "第${it}拍" } ?: "该音"
@@ -580,6 +597,9 @@ object TakeComparator {
     }
 
     private fun slotAdvice(a: TakeAlignment, b: TakeAlignment): List<String> {
+        if (!a.coverage.countsDeterminate || !b.coverage.countsDeterminate) {
+            return emptyList()
+        }
         val lines = ArrayList<String>()
         val targets = a.take.targets.orEmpty().indices
         for (index in targets) {

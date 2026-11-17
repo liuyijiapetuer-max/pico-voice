@@ -11,6 +11,10 @@ object ReviewText {
         "只支持单旋律，且只对照固定练习谱 practice-melody-v1（四拍 A4–C5–G4–E4）。慢滑音会标成不够稳定。不做复调，也不自动跟谱。"
     const val REPEAT_LIMIT =
         "相邻同音若缺少可观察的起音或足够无声分隔，或出现短间隔合并、滑音、不够稳定，缺音/多音会标为不可判定，界面不显示确定数字。"
+    const val INDETERMINATE_COUNTS_ADVICE =
+        "分段不足以给出确定的缺音或多音，也不能据此推断错漏或下改善结论，不发布缺/多音数字。"
+    const val RERECORD_CONDITION =
+        "如需再比，请在相邻同音之间留出可观察的起音或至少 50 ms 无声分隔后再录；短间隔合并、连续同音重新起奏、滑音或发音不够稳定时，仍无法判定缺/多音。"
     const val WINDOW_BIAS_NOTE =
         "分析窗可能把参考后三音标早约 36–38 ms，参考自身节奏平均偏差约 28 ms。判断赶拍或拖拍请看「相对同处理参考」的差值。相对谱面的原始时差会保留，不会偷偷减掉整段统一延迟。"
     const val NEAREST_VS_TARGET =
