@@ -26,9 +26,9 @@ object PracticeCoach {
             else -> "偏强"
         }
         val rhythmLabel = when {
-            frame.rhythmStability == null && frame.onsetIntervalMs == null -> "还没有稳定拍点"
-            (frame.rhythmStability ?: 0.0) >= 0.7 -> "节奏比较稳"
-            else -> "节奏不太稳"
+            frame.rhythmStability == null && frame.onsetIntervalMs == null -> "还没有稳定的起音间隔"
+            (frame.rhythmStability ?: 0.0) >= 0.7 -> "起音间隔比较稳"
+            else -> "起音间隔不太稳"
         }
         val sentence = buildSentence(frame, pitchLabel, rhythmLabel, loudnessLabel)
         return PracticeCue(pitchLabel, rhythmLabel, loudnessLabel, sentence)
@@ -53,7 +53,7 @@ object PracticeCoach {
             cents != null && abs(cents) <= 10.0 && frame.dbfs <= -28.0 ->
                 "音准已经稳住了，力度再大一点。"
             cents != null && abs(cents) <= 10.0 && (frame.rhythmStability ?: 1.0) < 0.7 && frame.onsetIntervalMs != null ->
-                "音准不错，跟着拍点再稳一点。"
+                "音准不错，起音间隔再稳一点。"
             cents != null && abs(cents) <= 10.0 ->
                 "音准稳定，保持住。"
             else ->
