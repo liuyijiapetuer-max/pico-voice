@@ -30,7 +30,10 @@ import com.spatialcoach.soundarchitecture.audio.UserTakeLoadResult
 import com.spatialcoach.soundarchitecture.audio.UserWavImporter
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -58,15 +61,31 @@ fun CoachWindowContent() {
             AnalysisBus.failImport("未确认固定练习谱，或导入槽位无效。")
             return@rememberLauncherForActivityResult
         }
-        scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                UserWavImporter.load(context, uri, takeId = slot, referenceConfirmed = true)
-            }
-            when (result) {
-                is UserTakeLoadResult.Ok -> AnalysisBus.storeUserTake(slot, result.take)
-                is UserTakeLoadResult.Failed -> AnalysisBus.failImport(result.reason)
+        val token = AnalysisBus.beginUserImport(slot)
+        if (token == null) {
+            AnalysisBus.failImport("导入槽位无效。")
+            return@rememberLauncherForActivityResult
+        }
+        val job = scope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    UserWavImporter.load(
+                        context,
+                        uri,
+                        takeId = slot,
+                        referenceConfirmed = AnalysisBus.userImports.state.referenceConfirmed,
+                        cancelled = { !isActive || !AnalysisBus.isImportCurrent(token) },
+                    )
+                }
+                ensureActive()
+                if (!AnalysisBus.isImportCurrent(token)) return@launch
+                AnalysisBus.publishUserImport(token, result)
+            } catch (e: CancellationException) {
+                AnalysisBus.onImportJobCancelled(token)
+                throw e
             }
         }
+        AnalysisBus.replaceImportJob(slot, job)
     }
 
     Column(
@@ -132,7 +151,10 @@ fun CoachWindowContent() {
                 "已确认：这是 practice-melody-v1 的演奏（再点可取消确认）"
             else
                 "确认这是 practice-melody-v1（四拍 A4–C5–G4–E4）的演奏，然后才能导入",
-        ) { referenceConfirmed = !referenceConfirmed }
+        ) {
+            referenceConfirmed = !referenceConfirmed
+            AnalysisBus.setPracticeReferenceConfirmed(referenceConfirmed)
+        }
         ReviewAction("导入第一遍（系统选文件）") {
             if (!referenceConfirmed) {
                 AnalysisBus.failImport("请先确认固定练习谱。")
@@ -172,6 +194,12 @@ fun CoachWindowContent() {
             Text(ReviewText.subscoreLine("节奏相对谱面（含检测窗偏差）", alignment.rhythm), color = WindowTheme.AmberDim, fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
             for (item in alignment.items) {
+                if (!alignment.coverage.countsDeterminate &&
+                    (item.kind == com.spatialcoach.soundarchitecture.audio.AlignmentKind.MISSING ||
+                        item.kind == com.spatialcoach.soundarchitecture.audio.AlignmentKind.EXTRA)
+                ) {
+                    continue
+                }
                 Text(ReviewText.alignmentLine(item), color = WindowTheme.Ink, fontSize = 12.sp)
                 Spacer(Modifier.height(4.dp))
             }

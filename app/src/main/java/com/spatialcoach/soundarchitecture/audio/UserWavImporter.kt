@@ -14,11 +14,15 @@ object UserWavImporter {
         uri: Uri,
         takeId: String,
         referenceConfirmed: Boolean,
+        cancelled: () -> Boolean = { false },
     ): UserTakeLoadResult {
         if (!referenceConfirmed) {
             return UserTakeLoadResult.Failed(
                 "未确认这是固定练习谱 ${PracticeFragments.ID_V1} 的演奏，已拒绝导入。",
             )
+        }
+        if (cancelled()) {
+            return UserTakeLoadResult.Failed("导入已取消或已失效，已停止读入。")
         }
         val name = displayName(context, uri) ?: uri.lastPathSegment ?: "未命名.wav"
         val resolver = context.contentResolver
@@ -29,17 +33,22 @@ object UserWavImporter {
         } catch (e: Exception) {
             return UserTakeLoadResult.Failed("无法打开所选文件（${e.message ?: "error"}）。")
         } ?: return UserTakeLoadResult.Failed("无法打开所选文件。")
-        return descriptor.use { afd ->
-            val length = afd.length
-            afd.createInputStream().use { stream ->
-                UserTakeFactory.fromWavStream(
-                    stream = stream,
-                    knownLength = if (length >= 0) length else null,
-                    takeId = takeId,
-                    sourceName = name,
-                    referenceConfirmed = true,
-                )
+        return try {
+            descriptor.use { afd ->
+                val length = afd.length
+                afd.createInputStream().use { stream ->
+                    UserTakeFactory.fromWavStream(
+                        stream = stream,
+                        knownLength = if (length >= 0) length else null,
+                        takeId = takeId,
+                        sourceName = name,
+                        referenceConfirmed = true,
+                        cancelled = cancelled,
+                    )
+                }
             }
+        } catch (e: Exception) {
+            UserTakeLoadResult.Failed("读取或分析该文件失败（${e.message ?: "error"}）。")
         }
     }
 

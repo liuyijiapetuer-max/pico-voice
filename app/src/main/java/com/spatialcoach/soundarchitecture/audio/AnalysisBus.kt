@@ -3,6 +3,7 @@ package com.spatialcoach.soundarchitecture.audio
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Job
 
 /**
  * 主舞台和三扇副窗共享的一份分析状态。
@@ -55,7 +56,14 @@ object AnalysisBus {
     var comparison by mutableStateOf<TakeComparison?>(null)
         private set
 
+    /**
+     * 用户导入发布的唯一状态门。所有写槽必须经过 [beginUserImport] / [publishUserImport]，
+     * 与 [UserImportCoordinatorTest] 覆盖的同一套令牌规则。
+     */
+    val userImports = UserImportCoordinator()
+
     private var requestSeq = 0L
+    private val importJobs = HashMap<ImportSlot, Job>()
 
     val practiceCue: PracticeCue
         get() = PracticeCoach.cue(frame)
@@ -82,6 +90,7 @@ object AnalysisBus {
     }
 
     fun requestDemoPlay(rendition: PracticeFragments.Rendition) {
+        invalidateInFlightImports("正在播放${rendition.label}。在途导入已失效，已成功的用户文件未改写成示范。")
         requestSeq += 1
         practiceStatus = "正在播放${rendition.label}。这是内置合成示范，不会记为用户第一遍或重奏。"
         demoPausedForPractice = true
@@ -93,9 +102,10 @@ object AnalysisBus {
     }
 
     fun requestResumeDemo() {
+        invalidateInFlightImports("已恢复舞台演示回放。在途导入已失效，已成功的用户文件未被改写。")
         requestSeq += 1
         demoPausedForPractice = false
-        practiceStatus = "已恢复舞台演示回放（合成音轨，非真麦）"
+        practiceStatus = "已恢复舞台演示回放（合成音轨，非真麦）。在途导入已失效。"
         practiceRequest = PracticeSessionRequest(
             id = requestSeq,
             action = PracticeSessionRequest.Action.RESUME_DEMO,
@@ -122,27 +132,48 @@ object AnalysisBus {
         playing = false
     }
 
-    fun storeUserTake(slot: String, take: PerformanceTake) {
-        if (take.source != InputSource.USER_WAV_FILE || !take.referenceConfirmed) {
-            practiceStatus = "拒绝写入：不是已确认参考的用户录音文件。"
-            return
-        }
-        val aligned = TakeComparator.alignWithProcessedReference(take)
-        lastAlignment = aligned
-        comparison = null
-        when (slot) {
-            "first" -> takeFirst = take
-            "retake" -> takeRetake = take
-            else -> {
-                practiceStatus = "未知导入槽位，未改写已有结果。"
-                return
-            }
-        }
-        val label = if (slot == "first") "第一遍" else "重奏"
-        practiceStatus = "已导入$label：${ReviewText.takeMetaLine(take)}。稳定音 ${take.events.count { it.stable }} 个。"
+    fun setPracticeReferenceConfirmed(confirmed: Boolean) {
+        userImports.setReferenceConfirmed(confirmed)
+        syncImportState()
+    }
+
+    fun beginUserImport(slotId: String): ImportToken? {
+        val slot = ImportSlot.fromId(slotId) ?: return null
+        importJobs.remove(slot)?.cancel()
+        val token = userImports.begin(slot)
+        syncImportState()
+        return token
+    }
+
+    fun replaceImportJob(slotId: String, job: Job) {
+        val slot = ImportSlot.fromId(slotId) ?: return
+        importJobs.remove(slot)?.cancel()
+        importJobs[slot] = job
+        job.invokeOnCompletion { importJobs.remove(slot, job) }
+    }
+
+    fun isImportCurrent(token: ImportToken): Boolean = userImports.isCurrent(token)
+
+    fun publishUserImport(token: ImportToken, result: UserTakeLoadResult): ImportPublishResult {
+        val outcome = userImports.publish(token, result)
+        syncImportState()
+        return outcome
+    }
+
+    fun onImportJobCancelled(token: ImportToken) {
+        userImports.ignoreStale(token, "导入已取消。该槽没有恢复旧的成功结果，也没有回退到合成示范。")
+        syncImportState()
+    }
+
+    fun invalidateInFlightImports(reason: String) {
+        userImports.invalidateInFlight(reason)
+        importJobs.values.forEach { it.cancel() }
+        importJobs.clear()
+        syncImportState()
     }
 
     fun failImport(reason: String) {
+        // 尚未拿到令牌的预检失败（未确认、未选文件等）不改写已有槽位。
         practiceStatus = "导入失败：$reason 未改写已有的第一遍或重奏，也没有回退到合成示范。"
     }
 
@@ -151,20 +182,17 @@ object AnalysisBus {
     }
 
     fun compareTakes() {
-        val a = takeFirst
-        val b = takeRetake
-        if (a == null || b == null) {
-            comparison = null
-            practiceStatus = "需要先导入用户的第一遍和重奏（录音文件），才能比较。内置示范不能代替。"
-            return
-        }
-        val result = TakeComparator.compare(a, b)
-        comparison = result
-        practiceStatus = if (result.comparable) {
-            "已按确认的固定练习谱 ${a.fragmentId} 比较用户第一遍与重奏。错音/缺音/多音与覆盖率如下；对准音音分不含错音，不能当作整体改善。"
-        } else {
-            result.rejectedReason ?: "不能比较。"
-        }
+        userImports.compare()
+        syncImportState()
+    }
+
+    private fun syncImportState() {
+        val s = userImports.state
+        takeFirst = s.first
+        takeRetake = s.retake
+        lastAlignment = s.lastAlignment
+        comparison = s.comparison
+        practiceStatus = s.status
     }
 }
 
