@@ -5,45 +5,65 @@ import kotlin.math.roundToInt
 
 /** 练习复验用的可读行。不声称 DSP 修音。 */
 object ReviewText {
-    const val SOURCE_DISCLAIMER = "文件回放（合成音轨）。不是真麦采集，也不是自动修音。"
+    const val SOURCE_DISCLAIMER = "用户导入的是录音文件分析，不是实时采集，也不是自动修音。"
+    const val DEMO_DISCLAIMER = "内置合成示范只用于展示分析路径，不是用户演奏成果。"
     const val LIMITS =
-        "只支持单旋律。慢滑音会标成不够稳定，不伪装成确定音列。不做复调，也不自动跟谱。"
+        "只支持单旋律，且只对照固定练习谱 practice-melody-v1（四拍 A4–C5–G4–E4）。慢滑音会标成不够稳定。不做复调，也不自动跟谱。"
+    const val REPEAT_LIMIT =
+        "相邻同音且间隔过短时，分段可能合并或漏计；这种情况下不作确定的缺音或多音结论。"
+    const val WINDOW_BIAS_NOTE =
+        "分析窗可能把参考后三音标早约 36–38 ms，参考自身节奏平均偏差约 28 ms。判断赶拍或拖拍请看「相对同处理参考」的差值。相对谱面的原始时差会保留，不会偷偷减掉整段统一延迟。"
+    const val NEAREST_VS_TARGET =
+        "最近律音只说明当前音准靠近哪个十二平均律音；谱面目标才是 practice-melody-v1 的既定音。二者不同时不得把最近律音当成谱面目标。"
 
     fun eventLine(event: NoteEvent): String {
         val time = formatTime(event.startMs)
         val name = event.noteName ?: "—"
         val beat = event.beatIndex?.let { "第${it}拍" } ?: "无节拍参考"
-        val cents = event.centsVsTarget?.let { "目标${signedCents(it)}" }
-            ?: event.centsVsNearest?.let { "最近律音${signedCents(it)}" }
-            ?: "无确定音高"
-        val timing = event.timingErrorMs?.let { "时差${signedMs(it)}" } ?: "无时差参考"
+        val nearest = event.centsVsNearest?.let { "最近律音${signedCents(it)}" } ?: "无确定最近律音"
+        val target = event.centsVsTarget?.let { "谱面目标${signedCents(it)}" } ?: "无谱面目标音分"
+        val timing = event.timingErrorMs?.let { "相对谱面时差${signedMs(it)}" } ?: "无谱面时差"
         val flags = buildList {
             if (event.glideSuspected) add("疑似滑音")
             if (!event.stable) add("不够稳定")
         }.joinToString(" ")
-        return listOf(time, name, beat, cents, timing, flags).filter { it.isNotBlank() }.joinToString("  ")
+        return listOf(time, name, beat, nearest, target, timing, flags).filter { it.isNotBlank() }.joinToString("  ")
     }
 
     fun alignmentLine(item: AlignmentItem): String {
         val kind = when (item.kind) {
-            AlignmentKind.MATCH -> "对准"
+            AlignmentKind.MATCH -> "对准谱面"
             AlignmentKind.WRONG_NOTE -> "错音"
             AlignmentKind.MISSING -> "缺音"
             AlignmentKind.EXTRA -> "多音"
             AlignmentKind.UNALIGNED -> "未对齐"
         }
         val beat = item.refBeatIndex?.let { "第${it}拍" } ?: "无节拍参考"
-        val target = item.target?.noteName?.let { "目标$it" } ?: "无目标音"
-        val got = item.event?.noteName?.let { "实际$it" } ?: "未奏出"
+        val target = item.target?.noteName?.let { "谱面目标$it" } ?: "无谱面目标"
+        val got = item.event?.noteName?.let { "最近律音$it" } ?: "未奏出"
         val time = item.event?.startMs?.let { formatTime(it) } ?: item.target?.startMs?.let { "参考${formatTime(it)}" } ?: "—"
         val cents = item.centsVsTarget?.let { signedCents(it) } ?: "—"
-        val timing = item.timingErrorMs?.let { signedMs(it) } ?: "—"
-        return "$kind  $time  $beat  $target  $got  音分$cents  时差$timing"
+        val raw = item.timingErrorMs?.let { signedMs(it) } ?: "—"
+        val rel = item.timingVsProcessedReferenceMs?.let { signedMs(it) } ?: "—"
+        return "$kind  $time  $beat  $target  $got  相对谱面目标$cents  相对谱面时差$raw  相对同处理参考$rel"
     }
 
     fun subscoreLine(label: String, score: Subscore?): String =
         if (score == null) "$label  无（没有可计入的对齐样本）"
         else "$label  平均偏差 ${score.meanAbs.roundToInt()} ${score.unit}（n=${score.count}）"
+
+    fun coverageLine(label: String, coverage: AlignmentCoverage): String =
+        "$label 覆盖率 ${coverage.rateText()}  对准${coverage.correctSlots} 错音${coverage.wrongNotes} 缺音${coverage.missing} 多音${coverage.extra}"
+
+    fun takeMetaLine(take: PerformanceTake): String {
+        val name = take.sourceName ?: take.takeId
+        val window = if (take.timeWindowStartMs != null && take.timeWindowEndMs != null)
+            "时间窗口 ${formatTime(take.timeWindowStartMs)}–${formatTime(take.timeWindowEndMs)}（未裁开头静音）"
+        else "时间窗口未声明"
+        val duration = take.audioDurationMs?.let { "文件时长 ${formatTime(it)}" } ?: "时长未知"
+        val confirmed = if (take.referenceConfirmed) "已确认参考 ${take.fragmentId}" else "未确认参考"
+        return "$name  ·  ${take.source.label}  ·  $confirmed  ·  $duration  ·  $window"
+    }
 
     fun formatTime(ms: Long): String = "%d.%02ds".format(ms / 1000, (abs(ms) % 1000) / 10)
 

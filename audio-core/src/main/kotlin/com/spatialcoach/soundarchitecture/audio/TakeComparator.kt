@@ -12,6 +12,28 @@ enum class AlignmentKind {
     UNALIGNED,
 }
 
+data class AlignmentCoverage(
+    val referenceSlots: Int,
+    val matchedSlots: Int,
+    val correctSlots: Int,
+    val wrongNotes: Int,
+    val missing: Int,
+    val extra: Int,
+    val unaligned: Int,
+) {
+    val rate: Double get() = if (referenceSlots == 0) 0.0 else matchedSlots.toDouble() / referenceSlots
+    fun rateText(): String = "$matchedSlots/$referenceSlots"
+    val sufficientForVerdict: Boolean get() = referenceSlots > 0 && missing <= 1 && rate + 1e-9 >= 0.75
+}
+
+enum class ImprovementVerdict {
+    SPECIFIC_EVIDENCE,
+    WORSENED,
+    MIXED,
+    INCONCLUSIVE_LOW_COVERAGE,
+    INCONCLUSIVE,
+}
+
 data class AlignmentItem(
     val kind: AlignmentKind,
     val referenceIndex: Int? = null,
@@ -21,6 +43,8 @@ data class AlignmentItem(
     val centsVsTarget: Double? = null,
     val timingErrorMs: Long? = null,
     val refBeatIndex: Int? = null,
+    val processedReferenceTimingMs: Long? = null,
+    val timingVsProcessedReferenceMs: Long? = null,
 ) {
     val annotatedEvent: NoteEvent?
         get() {
@@ -48,6 +72,7 @@ data class TakeAlignment(
     val pitch: Subscore?,
     val rhythm: Subscore?,
     val counts: Map<AlignmentKind, Int>,
+    val coverage: AlignmentCoverage,
 )
 
 data class TakeComparison(
@@ -57,6 +82,7 @@ data class TakeComparison(
     val takeA: TakeAlignment? = null,
     val takeB: TakeAlignment? = null,
     val suggestions: List<String> = emptyList(),
+    val verdict: ImprovementVerdict? = null,
 )
 
 /**
@@ -111,18 +137,68 @@ object TakeComparator {
             targets = takeA.targets.orEmpty(),
             description = takeA.fragmentId,
         )
-        val alignedA = align(takeA, reference)
-        val alignedB = align(takeB, reference)
+        val processed = processedOfficialAlignmentOrNull(reference)
+        val alignedA = annotateRelativeTiming(align(takeA, reference), processed)
+        val alignedB = annotateRelativeTiming(align(takeB, reference), processed)
+        val verdict = verdictOf(alignedA, alignedB)
         return TakeComparison(
             comparable = true,
             fragmentId = takeA.fragmentId,
             takeA = alignedA,
             takeB = alignedB,
-            suggestions = suggestions(alignedA, alignedB),
+            suggestions = suggestions(alignedA, alignedB, verdict),
+            verdict = verdict,
         )
     }
 
+    fun alignWithProcessedReference(
+        take: PerformanceTake,
+        reference: PracticeReference? = null,
+    ): TakeAlignment {
+        val ref = reference ?: PracticeReference(
+            fragmentId = take.fragmentId,
+            rhythm = take.rhythm,
+            targets = take.targets.orEmpty(),
+            description = take.fragmentId,
+        )
+        return annotateRelativeTiming(align(take, ref), processedOfficialAlignmentOrNull(ref))
+    }
+
+    fun processedOfficialAlignmentOrNull(reference: PracticeReference): TakeAlignment? {
+        if (!PracticeFragments.isOfficialReference(reference)) return null
+        val official = PassageAnalyzer.takeFromRendition(PracticeFragments.Rendition.REFERENCE)
+        return align(official, PracticeFragments.REFERENCE_V1)
+    }
+
+    fun annotateRelativeTiming(alignment: TakeAlignment, processed: TakeAlignment?): TakeAlignment {
+        if (processed == null) return alignment
+        val baseline = processed.items
+            .filter { it.referenceIndex != null && it.timingErrorMs != null }
+            .associate { it.referenceIndex!! to it.timingErrorMs!! }
+        val items = alignment.items.map { item ->
+            val base = item.referenceIndex?.let { baseline[it] }
+            val raw = item.timingErrorMs
+            item.copy(
+                processedReferenceTimingMs = base,
+                timingVsProcessedReferenceMs = if (raw != null && base != null) raw - base else null,
+            )
+        }
+        return alignment.copy(items = items)
+    }
+
     fun incomparability(takeA: PerformanceTake, takeB: PerformanceTake): String? {
+        if (!takeA.referenceConfirmed || !takeB.referenceConfirmed) {
+            return "未确认两遍都是固定练习谱 ${PracticeFragments.ID_V1} 的演奏，不能比较。"
+        }
+        if (takeA.fragmentId != PracticeFragments.ID_V1 || takeB.fragmentId != PracticeFragments.ID_V1) {
+            return if (takeA.fragmentId != takeB.fragmentId)
+                "片段不同（${takeA.fragmentId} 与 ${takeB.fragmentId}），且当前只支持 ${PracticeFragments.ID_V1}，不能比较。"
+            else
+                "当前只支持固定练习谱 ${PracticeFragments.ID_V1}（四拍 A4–C5–G4–E4），不支持其他曲目。"
+        }
+        if (takeA.targets != PracticeFragments.TARGETS_V1 || takeB.targets != PracticeFragments.TARGETS_V1) {
+            return "固定练习谱只支持既定四拍目标表，不支持其他曲目或改谱。"
+        }
         if (takeA.fragmentId != takeB.fragmentId) {
             return "片段不同（${takeA.fragmentId} 与 ${takeB.fragmentId}），不能比较。"
         }
@@ -226,9 +302,11 @@ object TakeComparator {
         if (err > TIME_GATE_MS) return FAR_MATCH_COST
         val cents = centsVsTarget(event, target)
         val wrong = isWrongNote(event, target, cents)
+        // 错音代价须高于“同音且仍在检测窗内、只是整体偏晚”的时间代价，
+        // 否则约 500ms 的整段延后会被配到邻近的下一目标，误判成缺音+错音+多音。
         val pitchCost = when {
             target.midi == null || cents == null -> 0.15
-            wrong -> 0.45
+            wrong -> 1.25
             else -> 0.10 + 0.002 * abs(cents)
         }
         return pitchCost + 0.002 * err
@@ -320,6 +398,16 @@ object TakeComparator {
             }
         }
         val counts = AlignmentKind.entries.associateWith { kind -> items.count { it.kind == kind } }
+        val referenceSlots = take.targets?.size ?: items.count { it.referenceIndex != null }
+        val coverage = AlignmentCoverage(
+            referenceSlots = referenceSlots,
+            matchedSlots = (counts[AlignmentKind.MATCH] ?: 0) + (counts[AlignmentKind.WRONG_NOTE] ?: 0),
+            correctSlots = counts[AlignmentKind.MATCH] ?: 0,
+            wrongNotes = counts[AlignmentKind.WRONG_NOTE] ?: 0,
+            missing = counts[AlignmentKind.MISSING] ?: 0,
+            extra = counts[AlignmentKind.EXTRA] ?: 0,
+            unaligned = counts[AlignmentKind.UNALIGNED] ?: 0,
+        )
         return TakeAlignment(
             take = take,
             items = items,
@@ -334,51 +422,96 @@ object TakeComparator {
                 unit = "毫秒",
             ),
             counts = counts,
+            coverage = coverage,
         )
     }
 
-    fun suggestions(a: TakeAlignment, b: TakeAlignment? = null): List<String> {
+    fun suggestions(
+        a: TakeAlignment,
+        b: TakeAlignment? = null,
+        verdict: ImprovementVerdict? = null,
+    ): List<String> {
         val out = ArrayList<String>()
         out += "以下建议来自与参考片段的对照，不是自动修音或 DSP 处理。"
+        out += ReviewText.WINDOW_BIAS_NOTE
         if (b == null) {
             out += takeAdvice(a, "这一遍")
+            out += coverageLine("这一遍", a)
             return out
         }
+        out += coverageLine("第一遍", a)
+        out += coverageLine("重奏", b)
+        out += "错音  第一遍 ${a.coverage.wrongNotes}  ·  重奏 ${b.coverage.wrongNotes}（单列，不折进对准音音分）。"
+        out += "缺音  第一遍 ${a.coverage.missing}  ·  重奏 ${b.coverage.missing}；多音  第一遍 ${a.coverage.extra}  ·  重奏 ${b.coverage.extra}。"
         val pitchA = a.pitch
         val pitchB = b.pitch
         if (pitchA != null && pitchB != null) {
-            out += when {
-                pitchB.meanAbs + 3.0 < pitchA.meanAbs ->
-                    "音准：第一遍平均偏差 ${fmt(pitchA.meanAbs)} 音分（${pitchA.count} 个对准音），重奏 ${fmt(pitchB.meanAbs)} 音分（${pitchB.count} 个），有改善。"
-                pitchA.meanAbs + 3.0 < pitchB.meanAbs ->
-                    "音准：第一遍平均偏差 ${fmt(pitchA.meanAbs)} 音分，重奏 ${fmt(pitchB.meanAbs)} 音分，这一项变差。"
-                else ->
-                    "音准：两遍平均偏差接近（${fmt(pitchA.meanAbs)} 与 ${fmt(pitchB.meanAbs)} 音分）。"
-            }
+            out += "对准音音分（不含错音，不能当作整体音准结论）：第一遍平均 ${fmt(pitchA.meanAbs)} 音分（n=${pitchA.count}），重奏 ${fmt(pitchB.meanAbs)} 音分（n=${pitchB.count}）。"
         }
-        val rhythmA = a.rhythm
-        val rhythmB = b.rhythm
-        if (rhythmA != null && rhythmB != null) {
-            out += when {
-                rhythmB.meanAbs + 15.0 < rhythmA.meanAbs ->
-                    "节奏：第一遍平均时差 ${fmt(rhythmA.meanAbs)} 毫秒（${rhythmA.count} 个已对齐音），重奏 ${fmt(rhythmB.meanAbs)} 毫秒，有改善。未扣除整段统一延迟。"
-                rhythmA.meanAbs + 15.0 < rhythmB.meanAbs ->
-                    "节奏：第一遍平均时差 ${fmt(rhythmA.meanAbs)} 毫秒，重奏 ${fmt(rhythmB.meanAbs)} 毫秒，这一项变差。未扣除整段统一延迟。"
-                else ->
-                    "节奏：两遍平均时差接近（${fmt(rhythmA.meanAbs)} 与 ${fmt(rhythmB.meanAbs)} 毫秒）。未扣除整段统一延迟。"
-            }
+        val relA = relativeRhythmMean(a)
+        val relB = relativeRhythmMean(b)
+        if (relA != null && relB != null) {
+            out += "节奏相对同处理参考：第一遍平均 ${fmt(relA)} 毫秒（n=${a.coverage.matchedSlots}），重奏 ${fmt(relB)} 毫秒。原始相对谱面时差仍保留，未减整段统一延迟。"
+        } else if (a.rhythm != null && b.rhythm != null) {
+            out += "节奏相对谱面平均时差：第一遍 ${fmt(a.rhythm.meanAbs)} 毫秒，重奏 ${fmt(b.rhythm.meanAbs)} 毫秒（含检测窗偏差，不能直接称赶拍）。未减整段统一延迟。"
+        }
+        out += when (verdict ?: verdictOf(a, b)) {
+            ImprovementVerdict.INCONCLUSIVE_LOW_COVERAGE ->
+                "缺音或未对齐过多（覆盖率不足 ${a.coverage.rateText()} / ${b.coverage.rateText()}），不能下改善结论。"
+            ImprovementVerdict.INCONCLUSIVE ->
+                "证据不足以给出改善或变差的结论。"
+            ImprovementVerdict.MIXED ->
+                "分项有改善也有变差，不能用单一总分概括。"
+            ImprovementVerdict.WORSENED ->
+                "按错音/缺音/相对同处理参考的节奏与对准音音分看，重奏没有改善。"
+            ImprovementVerdict.SPECIFIC_EVIDENCE ->
+                "下面只列出有对照证据的分项变化，不是整体分数改善。"
         }
         out += slotAdvice(a, b)
-        val wrongA = a.counts[AlignmentKind.WRONG_NOTE] ?: 0
-        val wrongB = b.counts[AlignmentKind.WRONG_NOTE] ?: 0
-        val missA = a.counts[AlignmentKind.MISSING] ?: 0
-        val missB = b.counts[AlignmentKind.MISSING] ?: 0
-        val extraA = a.counts[AlignmentKind.EXTRA] ?: 0
-        val extraB = b.counts[AlignmentKind.EXTRA] ?: 0
-        if (wrongA + missA + extraA + wrongB + missB + extraB > 0) {
-            out += "第一遍：错音 $wrongA、缺音 $missA、多音 $extraA；重奏：错音 $wrongB、缺音 $missB、多音 $extraB。"
-        }
         return out
+    }
+
+    fun verdictOf(a: TakeAlignment, b: TakeAlignment): ImprovementVerdict {
+        if (!a.coverage.sufficientForVerdict || !b.coverage.sufficientForVerdict) {
+            return ImprovementVerdict.INCONCLUSIVE_LOW_COVERAGE
+        }
+        val betterWrong = b.coverage.wrongNotes < a.coverage.wrongNotes
+        val worseWrong = b.coverage.wrongNotes > a.coverage.wrongNotes
+        val betterMissing = b.coverage.missing < a.coverage.missing
+        val worseMissing = b.coverage.missing > a.coverage.missing
+        val pitchA = a.pitch?.meanAbs
+        val pitchB = b.pitch?.meanAbs
+        val betterPitch = pitchA != null && pitchB != null && pitchB + 3.0 < pitchA
+        val worsePitch = pitchA != null && pitchB != null && pitchA + 3.0 < pitchB
+        val relA = relativeRhythmMean(a)
+        val relB = relativeRhythmMean(b)
+        val betterRhythm = relA != null && relB != null && relB + 15.0 < relA
+        val worseRhythm = relA != null && relB != null && relA + 15.0 < relB
+        val better = listOf(betterWrong, betterMissing, betterPitch, betterRhythm).count { it }
+        val worse = listOf(worseWrong, worseMissing, worsePitch, worseRhythm).count { it }
+        return when {
+            better > 0 && worse > 0 -> ImprovementVerdict.MIXED
+            better > 0 -> ImprovementVerdict.SPECIFIC_EVIDENCE
+            worse > 0 -> ImprovementVerdict.WORSENED
+            else -> ImprovementVerdict.INCONCLUSIVE
+        }
+    }
+
+    fun relativeRhythmMean(alignment: TakeAlignment): Double? {
+        val values = alignment.items.mapNotNull { item ->
+            if (item.kind == AlignmentKind.MATCH || item.kind == AlignmentKind.WRONG_NOTE) {
+                item.timingVsProcessedReferenceMs?.toDouble()
+            } else {
+                null
+            }
+        }
+        if (values.isEmpty()) return null
+        return values.map { abs(it) }.average()
+    }
+
+    private fun coverageLine(label: String, alignment: TakeAlignment): String {
+        val c = alignment.coverage
+        return "$label 匹配覆盖率 ${c.rateText()}（对准 ${c.correctSlots}、错音 ${c.wrongNotes}、缺音 ${c.missing}、多音 ${c.extra}）。"
     }
 
     private fun takeAdvice(alignment: TakeAlignment, label: String): List<String> {
@@ -389,25 +522,28 @@ object TakeComparator {
             when (item.kind) {
                 AlignmentKind.MATCH -> {
                     val cents = item.centsVsTarget
-                    val timing = item.timingErrorMs
                     if (cents != null && abs(cents) >= 10.0) {
-                        lines += "$label $beat $name ${dirCents(cents)}约 ${fmt(abs(cents))} 音分。"
+                        lines += "$label $beat $name 相对谱面目标 ${dirCents(cents)}约 ${fmt(abs(cents))} 音分（不是相对最近律音）。"
                     }
-                    if (timing != null && abs(timing) >= 40L) {
-                        lines += "$label $beat $name ${dirTime(timing)}约 ${abs(timing)} 毫秒。"
+                    val rel = item.timingVsProcessedReferenceMs
+                    val raw = item.timingErrorMs
+                    if (rel != null && abs(rel) >= 40L) {
+                        lines += "$label $beat $name 相对同处理参考 ${dirTime(rel)}约 ${abs(rel)} 毫秒。相对谱面原始时差 ${raw?.let { signed(it.toDouble()) } ?: "—"} 毫秒，含检测窗偏差，不能直接称赶拍。"
+                    } else if (rel == null && raw != null && abs(raw) >= 40L) {
+                        lines += "$label $beat $name 相对谱面时差 ${signed(raw.toDouble())} 毫秒（可能含检测窗偏差，不能直接称赶拍）。"
                     }
                 }
                 AlignmentKind.WRONG_NOTE -> {
                     val got = item.event?.noteName ?: "其他音"
-                    lines += "$label $beat 目标是 $name，实际更接近 $got，记为错音，不是把后面的音整体挪位。"
+                    lines += "$label $beat 谱面目标是 $name，实际最近律音是 $got，记为错音，不是把后面的音整体挪位。"
                 }
-                AlignmentKind.MISSING -> lines += "$label 少了 $beat 的 $name。"
+                AlignmentKind.MISSING -> lines += "$label 少了 $beat 的谱面目标 $name。"
                 AlignmentKind.EXTRA -> lines += "$label 多了一个 ${item.event?.noteName ?: "音"}（约 ${item.event?.startMs} ms）。"
                 AlignmentKind.UNALIGNED -> lines += "$label 有一个未对齐或不够稳定的音（约 ${item.event?.startMs} ms），未当作确定错音。"
             }
         }
         if (lines.isEmpty()) {
-            lines += "$label 已对齐的音在音准和节奏上没有明显偏差。"
+            lines += "$label 已对齐的音没有需要单独列出的音准或相对同处理参考时差。"
         }
         return lines
     }
@@ -422,26 +558,28 @@ object TakeComparator {
             val beat = (ia ?: ib)?.refBeatIndex?.let { "第${it}拍" } ?: "该音"
             val name = (ia ?: ib)?.target?.noteName ?: "音符"
             if (ia?.kind == AlignmentKind.WRONG_NOTE && ib?.kind == AlignmentKind.MATCH) {
-                lines += "$beat $name：第一遍弹成了 ${ia.event?.noteName ?: "其他音"}（错音），重奏已对准目标音。"
+                lines += "$beat 谱面目标 $name：第一遍最近律音是 ${ia.event?.noteName ?: "其他音"}（错音），重奏已对准谱面目标。"
             } else if (ia?.kind == AlignmentKind.MISSING && ib?.kind != AlignmentKind.MISSING && ib != null) {
-                lines += "$beat $name：第一遍缺音，重奏已奏出。"
+                lines += "$beat 谱面目标 $name：第一遍缺音，重奏已奏出。"
             } else if (ia?.kind != AlignmentKind.MISSING && ia != null && ib?.kind == AlignmentKind.MISSING) {
-                lines += "$beat $name：重奏缺音。"
+                lines += "$beat 谱面目标 $name：重奏缺音。"
             }
             val ca = ia?.centsVsTarget
             val cb = ib?.centsVsTarget
             if (ia?.kind == AlignmentKind.MATCH && ib?.kind == AlignmentKind.MATCH && ca != null && cb != null) {
                 if (abs(ca) >= 10.0 || abs(cb) >= 10.0) {
-                    lines += "$beat $name 音准：第一遍 ${signed(ca)} 音分，重奏 ${signed(cb)} 音分。"
+                    lines += "$beat $name 相对谱面目标音准：第一遍 ${signed(ca)} 音分，重奏 ${signed(cb)} 音分。"
                 }
             }
-            val ta = ia?.timingErrorMs
-            val tb = ib?.timingErrorMs
-            if (ta != null && tb != null && (abs(ta) >= 40L || abs(tb) >= 40L) &&
+            val ra = ia?.timingVsProcessedReferenceMs
+            val rb = ib?.timingVsProcessedReferenceMs
+            if (ra != null && rb != null && (abs(ra) >= 40L || abs(rb) >= 40L) &&
                 (ia.kind == AlignmentKind.MATCH || ia.kind == AlignmentKind.WRONG_NOTE) &&
                 (ib.kind == AlignmentKind.MATCH || ib.kind == AlignmentKind.WRONG_NOTE)
             ) {
-                lines += "$beat $name 节奏：第一遍 ${signed(ta.toDouble())} 毫秒，重奏 ${signed(tb.toDouble())} 毫秒。"
+                val rawA = ia.timingErrorMs
+                val rawB = ib.timingErrorMs
+                lines += "$beat $name 相对同处理参考：第一遍 ${signed(ra.toDouble())} 毫秒，重奏 ${signed(rb.toDouble())} 毫秒。相对谱面原始时差 ${rawA?.let { signed(it.toDouble()) } ?: "—"} / ${rawB?.let { signed(it.toDouble()) } ?: "—"} 毫秒（含检测窗偏差，不能直接称赶拍）。"
             }
         }
         return lines

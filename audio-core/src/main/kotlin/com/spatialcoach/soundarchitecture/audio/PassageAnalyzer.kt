@@ -2,7 +2,7 @@ package com.spatialcoach.soundarchitecture.audio
 
 /**
  * 用真实 [AnalysisEngine] 分析一段 PCM，再交给 [NoteSegmenter] 出事件。
- * 测试和练习会话共用这一条路径，避免只对手造事件做比较。
+ * 测试、练习会话和用户 WAV 导入共用这一条路径。每次调用新建引擎，等价于跨段 reset。
  */
 object PassageAnalyzer {
     const val FFT_SIZE = 2048
@@ -13,16 +13,18 @@ object PassageAnalyzer {
         sampleRate: Int = PracticeFragments.SAMPLE_RATE,
         fftSize: Int = FFT_SIZE,
         hopSize: Int = HOP_SIZE,
+        engine: AnalysisEngine? = null,
     ): List<AnalysisFrame> {
-        val engine = AnalysisEngine(sampleRate = sampleRate, fftSize = fftSize, hopSize = hopSize)
-        return engine.push(samples)
+        val used = engine ?: AnalysisEngine(sampleRate = sampleRate, fftSize = fftSize, hopSize = hopSize)
+        return used.push(samples)
     }
 
     fun events(
         samples: FloatArray,
         sampleRate: Int = PracticeFragments.SAMPLE_RATE,
         segmenter: NoteSegmenter = NoteSegmenter(),
-    ): List<NoteEvent> = segmenter.segment(frames(samples, sampleRate))
+        engine: AnalysisEngine? = null,
+    ): List<NoteEvent> = segmenter.segment(frames(samples, sampleRate, engine = engine))
 
     fun take(
         takeId: String,
@@ -32,12 +34,22 @@ object PassageAnalyzer {
         rendition: PracticeFragments.Rendition? = null,
         source: InputSource = InputSource.FILE_SYNTHETIC,
         segmenter: NoteSegmenter = NoteSegmenter(),
+        referenceConfirmed: Boolean? = null,
+        sourceName: String? = null,
+        audioDurationMs: Long? = StrictUserWav.durationMs(samples.size, sampleRate),
+        timeWindowStartMs: Long? = 0L,
+        timeWindowEndMs: Long? = StrictUserWav.durationMs(samples.size, sampleRate),
     ): PerformanceTake = PracticeFragments.buildTake(
         takeId = takeId,
         events = events(samples, sampleRate, segmenter),
         reference = reference,
         rendition = rendition,
         source = source,
+        referenceConfirmed = referenceConfirmed,
+        sourceName = sourceName,
+        audioDurationMs = audioDurationMs,
+        timeWindowStartMs = timeWindowStartMs,
+        timeWindowEndMs = timeWindowEndMs,
     )
 
     fun takeFromRendition(
@@ -47,5 +59,7 @@ object PassageAnalyzer {
         takeId = takeId,
         samples = PracticeFragments.render(rendition),
         rendition = rendition,
+        source = InputSource.FILE_SYNTHETIC,
+        sourceName = rendition.label,
     )
 }

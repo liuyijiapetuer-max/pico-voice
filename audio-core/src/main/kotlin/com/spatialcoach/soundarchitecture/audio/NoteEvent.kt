@@ -28,16 +28,19 @@ data class NoteEvent(
 
 enum class InputSource {
     FILE_SYNTHETIC,
+    USER_WAV_FILE,
     ;
 
     val label: String
         get() = when (this) {
-            FILE_SYNTHETIC -> "文件回放（合成音轨）"
+            FILE_SYNTHETIC -> "内置合成示范（不是用户演奏）"
+            USER_WAV_FILE -> "录音文件分析（不是实时采集）"
         }
 }
 
 /**
- * 一次可追溯的演奏记录。两次比较必须同一 [fragmentId]、同一节拍参考、同一目标表。
+ * 一次可追溯的演奏记录。两次比较必须同一 [fragmentId]、同一节拍参考、同一目标表，且都已确认参考。
+ * [timeWindowStartMs] 到 [timeWindowEndMs] 是分析用的文件窗口；默认从 0 到文件时长，不裁开头静音、不平移对齐。
  */
 data class PerformanceTake(
     val takeId: String,
@@ -47,6 +50,11 @@ data class PerformanceTake(
     val targets: List<TargetNote>?,
     val events: List<NoteEvent>,
     val rendition: String? = null,
+    val referenceConfirmed: Boolean = false,
+    val sourceName: String? = null,
+    val audioDurationMs: Long? = null,
+    val timeWindowStartMs: Long? = null,
+    val timeWindowEndMs: Long? = null,
 )
 
 data class TargetNote(

@@ -4,7 +4,7 @@ import kotlin.math.pow
 
 /**
  * 内置、可授权的合成多音符练习片段。片段 id、目标表、BPM 与节拍原点固定。
- * 只用于文件回放 / 合成示范，不是用户文件，也不是真麦采集。
+ * 只用于文件回放 / 合成示范，不是用户文件，也不是真麦采集，不能当作用户重奏成果。
  */
 object PracticeFragments {
     const val ID_V1 = "practice-melody-v1"
@@ -23,13 +23,13 @@ object PracticeFragments {
         fragmentId = ID_V1,
         rhythm = RHYTHM_V1,
         targets = TARGETS_V1,
-        description = "合成练习片段 practice-melody-v1：120 BPM，原点 0 ms，四拍 A4–C5–G4–E4。可授权合成正弦，不含商业歌曲。",
+        description = "合成练习片段 practice-melody-v1：120 BPM，原点 0 ms，四拍 A4–C5–G4–E4。可授权合成正弦，不含商业歌曲。当前只支持这一份固定练习谱，不支持其他曲目。",
     )
 
     enum class Rendition(val id: String, val label: String) {
-        REFERENCE("reference", "参考（对准、准点）"),
-        FIRST_TAKE("first", "第一遍示范（含已知偏差）"),
-        RETAKE("retake", "重奏示范（已改善）"),
+        REFERENCE("reference", "内置参考示范（对准、准点）"),
+        FIRST_TAKE("first", "内置偏差示范（不是用户第一遍）"),
+        RETAKE("retake", "内置改善示范（不是用户重奏）"),
     }
 
     data class SynthNote(
@@ -82,12 +82,20 @@ object PracticeFragments {
         return out
     }
 
+    fun isOfficialReference(reference: PracticeReference): Boolean =
+        reference.fragmentId == ID_V1 && reference.targets == TARGETS_V1 && reference.rhythm == RHYTHM_V1
+
     fun buildTake(
         takeId: String,
         events: List<NoteEvent>,
         reference: PracticeReference = REFERENCE_V1,
         rendition: Rendition? = null,
         source: InputSource = InputSource.FILE_SYNTHETIC,
+        referenceConfirmed: Boolean? = null,
+        sourceName: String? = null,
+        audioDurationMs: Long? = null,
+        timeWindowStartMs: Long? = null,
+        timeWindowEndMs: Long? = null,
     ): PerformanceTake = PerformanceTake(
         takeId = takeId,
         fragmentId = reference.fragmentId,
@@ -96,6 +104,11 @@ object PracticeFragments {
         targets = reference.targets,
         events = events,
         rendition = rendition?.id,
+        referenceConfirmed = referenceConfirmed ?: isOfficialReference(reference),
+        sourceName = sourceName ?: rendition?.label,
+        audioDurationMs = audioDurationMs,
+        timeWindowStartMs = timeWindowStartMs,
+        timeWindowEndMs = timeWindowEndMs,
     )
 
     private fun TargetNote.toSynth(cents: Double, delayMs: Long): SynthNote {
