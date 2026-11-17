@@ -17,13 +17,20 @@ data class AlignmentCoverage(
     val matchedSlots: Int,
     val correctSlots: Int,
     val wrongNotes: Int,
-    val missing: Int,
-    val extra: Int,
+    val missing: Int?,
+    val extra: Int?,
     val unaligned: Int,
+    val countability: CountabilityStatus = CountabilityStatus.DETERMINATE,
+    val countabilityReason: String? = null,
 ) {
     val rate: Double get() = if (referenceSlots == 0) 0.0 else matchedSlots.toDouble() / referenceSlots
     fun rateText(): String = "$matchedSlots/$referenceSlots"
-    val sufficientForVerdict: Boolean get() = referenceSlots > 0 && missing <= 1 && rate + 1e-9 >= 0.75
+    val countsDeterminate: Boolean get() = countability == CountabilityStatus.DETERMINATE
+    val sufficientForVerdict: Boolean
+        get() = countsDeterminate &&
+            referenceSlots > 0 &&
+            (missing ?: Int.MAX_VALUE) <= 1 &&
+            rate + 1e-9 >= 0.75
 }
 
 enum class ImprovementVerdict {
@@ -31,6 +38,7 @@ enum class ImprovementVerdict {
     WORSENED,
     MIXED,
     INCONCLUSIVE_LOW_COVERAGE,
+    INCONCLUSIVE_INDETERMINATE_COUNTS,
     INCONCLUSIVE,
 }
 
@@ -399,14 +407,19 @@ object TakeComparator {
         }
         val counts = AlignmentKind.entries.associateWith { kind -> items.count { it.kind == kind } }
         val referenceSlots = take.targets?.size ?: items.count { it.referenceIndex != null }
+        val gate = EventCountGate.assess(take, items)
+        val rawMissing = counts[AlignmentKind.MISSING] ?: 0
+        val rawExtra = counts[AlignmentKind.EXTRA] ?: 0
         val coverage = AlignmentCoverage(
             referenceSlots = referenceSlots,
             matchedSlots = (counts[AlignmentKind.MATCH] ?: 0) + (counts[AlignmentKind.WRONG_NOTE] ?: 0),
             correctSlots = counts[AlignmentKind.MATCH] ?: 0,
             wrongNotes = counts[AlignmentKind.WRONG_NOTE] ?: 0,
-            missing = counts[AlignmentKind.MISSING] ?: 0,
-            extra = counts[AlignmentKind.EXTRA] ?: 0,
+            missing = if (gate.determinate) rawMissing else null,
+            extra = if (gate.determinate) rawExtra else null,
             unaligned = counts[AlignmentKind.UNALIGNED] ?: 0,
+            countability = gate.status,
+            countabilityReason = gate.reason,
         )
         return TakeAlignment(
             take = take,
@@ -442,7 +455,7 @@ object TakeComparator {
         out += coverageLine("第一遍", a)
         out += coverageLine("重奏", b)
         out += "错音  第一遍 ${a.coverage.wrongNotes}  ·  重奏 ${b.coverage.wrongNotes}（单列，不折进对准音音分）。"
-        out += "缺音  第一遍 ${a.coverage.missing}  ·  重奏 ${b.coverage.missing}；多音  第一遍 ${a.coverage.extra}  ·  重奏 ${b.coverage.extra}。"
+        out += missingExtraSuggestion(a, b)
         val pitchA = a.pitch
         val pitchB = b.pitch
         if (pitchA != null && pitchB != null) {
@@ -458,6 +471,8 @@ object TakeComparator {
         out += when (verdict ?: verdictOf(a, b)) {
             ImprovementVerdict.INCONCLUSIVE_LOW_COVERAGE ->
                 "缺音或未对齐过多（覆盖率不足 ${a.coverage.rateText()} / ${b.coverage.rateText()}），不能下改善结论。"
+            ImprovementVerdict.INCONCLUSIVE_INDETERMINATE_COUNTS ->
+                "分段不足以给出确定的缺音或多音计数，不能下改善结论，也不发布缺/多音数字。"
             ImprovementVerdict.INCONCLUSIVE ->
                 "证据不足以给出改善或变差的结论。"
             ImprovementVerdict.MIXED ->
@@ -472,13 +487,16 @@ object TakeComparator {
     }
 
     fun verdictOf(a: TakeAlignment, b: TakeAlignment): ImprovementVerdict {
+        if (!a.coverage.countsDeterminate || !b.coverage.countsDeterminate) {
+            return ImprovementVerdict.INCONCLUSIVE_INDETERMINATE_COUNTS
+        }
         if (!a.coverage.sufficientForVerdict || !b.coverage.sufficientForVerdict) {
             return ImprovementVerdict.INCONCLUSIVE_LOW_COVERAGE
         }
         val betterWrong = b.coverage.wrongNotes < a.coverage.wrongNotes
         val worseWrong = b.coverage.wrongNotes > a.coverage.wrongNotes
-        val betterMissing = b.coverage.missing < a.coverage.missing
-        val worseMissing = b.coverage.missing > a.coverage.missing
+        val betterMissing = (b.coverage.missing ?: 0) < (a.coverage.missing ?: 0)
+        val worseMissing = (b.coverage.missing ?: 0) > (a.coverage.missing ?: 0)
         val pitchA = a.pitch?.meanAbs
         val pitchB = b.pitch?.meanAbs
         val betterPitch = pitchA != null && pitchB != null && pitchB + 3.0 < pitchA
@@ -509,9 +527,18 @@ object TakeComparator {
         return values.map { abs(it) }.average()
     }
 
+    private fun missingExtraSuggestion(a: TakeAlignment, b: TakeAlignment): String {
+        val ca = a.coverage
+        val cb = b.coverage
+        if (!ca.countsDeterminate || !cb.countsDeterminate) {
+            val why = listOfNotNull(ca.countabilityReason, cb.countabilityReason).distinct().joinToString(" ")
+            return "缺音/多音不可判定，不发布确定计数。" + if (why.isBlank()) "" else " $why"
+        }
+        return "缺音  第一遍 ${ca.missing}  ·  重奏 ${cb.missing}；多音  第一遍 ${ca.extra}  ·  重奏 ${cb.extra}。"
+    }
+
     private fun coverageLine(label: String, alignment: TakeAlignment): String {
-        val c = alignment.coverage
-        return "$label 匹配覆盖率 ${c.rateText()}（对准 ${c.correctSlots}、错音 ${c.wrongNotes}、缺音 ${c.missing}、多音 ${c.extra}）。"
+        return ReviewText.coverageDetail(label, alignment.coverage)
     }
 
     private fun takeAdvice(alignment: TakeAlignment, label: String): List<String> {
@@ -537,8 +564,12 @@ object TakeComparator {
                     val got = item.event?.noteName ?: "其他音"
                     lines += "$label $beat 谱面目标是 $name，实际最近律音是 $got，记为错音，不是把后面的音整体挪位。"
                 }
-                AlignmentKind.MISSING -> lines += "$label 少了 $beat 的谱面目标 $name。"
-                AlignmentKind.EXTRA -> lines += "$label 多了一个 ${item.event?.noteName ?: "音"}（约 ${item.event?.startMs} ms）。"
+                AlignmentKind.MISSING -> if (alignment.coverage.countsDeterminate) {
+                    lines += "$label 少了 $beat 的谱面目标 $name。"
+                }
+                AlignmentKind.EXTRA -> if (alignment.coverage.countsDeterminate) {
+                    lines += "$label 多了一个 ${item.event?.noteName ?: "音"}（约 ${item.event?.startMs} ms）。"
+                }
                 AlignmentKind.UNALIGNED -> lines += "$label 有一个未对齐或不够稳定的音（约 ${item.event?.startMs} ms），未当作确定错音。"
             }
         }

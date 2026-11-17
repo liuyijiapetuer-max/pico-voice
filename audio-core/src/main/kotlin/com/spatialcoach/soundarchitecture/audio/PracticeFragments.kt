@@ -96,6 +96,7 @@ object PracticeFragments {
         audioDurationMs: Long? = null,
         timeWindowStartMs: Long? = null,
         timeWindowEndMs: Long? = null,
+        segmentation: SegmentationDiagnostics = SegmentationDiagnostics(),
     ): PerformanceTake = PerformanceTake(
         takeId = takeId,
         fragmentId = reference.fragmentId,
@@ -109,6 +110,7 @@ object PracticeFragments {
         audioDurationMs = audioDurationMs,
         timeWindowStartMs = timeWindowStartMs,
         timeWindowEndMs = timeWindowEndMs,
+        segmentation = segmentation,
     )
 
     private fun TargetNote.toSynth(cents: Double, delayMs: Long): SynthNote {

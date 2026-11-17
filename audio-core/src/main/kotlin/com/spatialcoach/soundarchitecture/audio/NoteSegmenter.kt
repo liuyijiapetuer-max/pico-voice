@@ -9,6 +9,8 @@ import kotlin.math.ln
  * 分段依据：静音间隙、以及确认后的换音。短帧抖动（不足 [confirmFrames] 或短于 [minNoteMs]）会被抑制。
  * 慢滑音会并成一条事件并标记 [NoteEvent.glideSuspected]，不伪装成一串确定音。
  * 只承诺单旋律；复调和自动跟谱都不做。
+ * 同音之间若只观察到短于 [minSilenceMs] 的无声，会合并并记录 [SegmentationIssueKind.SHORT_SILENCE_SAME_PITCH]，
+ * 比较器据此把缺/多音标为不可判定，而不是按期望音数强行切开。
  */
 class NoteSegmenter(
     val minNoteMs: Long = 70L,
@@ -17,9 +19,15 @@ class NoteSegmenter(
     val centsChangeSplit: Double = 60.0,
     val glideRangeCents: Double = 80.0,
 ) {
-    fun segment(frames: List<AnalysisFrame>): List<NoteEvent> {
-        if (frames.isEmpty()) return emptyList()
+    fun segment(frames: List<AnalysisFrame>): List<NoteEvent> = segmentWithReport(frames).events
+
+    fun segmentWithReport(frames: List<AnalysisFrame>): SegmentationResult {
+        if (frames.isEmpty()) {
+            return SegmentationResult(emptyList(), SegmentationDiagnostics())
+        }
         val events = ArrayList<NoteEvent>()
+        val issues = ArrayList<SegmentationIssue>()
+        val silences = ArrayList<ObservedSilence>()
         var note = ArrayList<AnalysisFrame>()
         var startBuf = ArrayList<AnalysisFrame>()
         var changeBuf = ArrayList<AnalysisFrame>()
@@ -28,9 +36,51 @@ class NoteSegmenter(
         fun voiced(frame: AnalysisFrame): Boolean =
             frame.pitchHz != null && frame.pitchConfidence != null
 
+        fun recordShortSamePitchSilence() {
+            if (silenceBuf.isEmpty() || note.isEmpty()) return
+            val sil = spanMs(silenceBuf)
+            if (sil > 0 && sil < minSilenceMs) {
+                val start = silenceBuf.first().timestampMs
+                issues += SegmentationIssue(
+                    kind = SegmentationIssueKind.SHORT_SILENCE_SAME_PITCH,
+                    startMs = start,
+                    endMs = start + sil,
+                    observedSilenceMs = sil,
+                    detail = "同音之间只观察到 ${sil} ms 无声，短于可分割间隔 ${minSilenceMs} ms，已合并，不能据此确定音数。",
+                )
+            }
+        }
+
+        fun recordSilenceIfLongEnough() {
+            if (silenceBuf.isEmpty()) return
+            val sil = spanMs(silenceBuf)
+            if (sil >= minSilenceMs) {
+                val start = silenceBuf.first().timestampMs
+                silences += ObservedSilence(start, start + sil)
+            }
+        }
+
+        fun maybeMarkEvent(event: NoteEvent) {
+            if (event.glideSuspected || !event.stable) {
+                issues += SegmentationIssue(
+                    kind = SegmentationIssueKind.GLIDE_OR_UNSTABLE,
+                    startMs = event.startMs,
+                    endMs = event.endMs,
+                    detail = if (event.glideSuspected)
+                        "该段被标为疑似滑音，不能当作确定的缺音或多音依据。"
+                    else
+                        "该段不够稳定，不能当作确定的缺音或多音依据。",
+                )
+            }
+        }
+
         fun flushNote() {
+            recordSilenceIfLongEnough()
             val event = toEvent(note)
-            if (event != null) events += event
+            if (event != null) {
+                maybeMarkEvent(event)
+                events += event
+            }
             note = ArrayList()
             changeBuf = ArrayList()
             silenceBuf = ArrayList()
@@ -54,6 +104,7 @@ class NoteSegmenter(
             }
 
             if (voiced(frame) && sameRegion(note, frame)) {
+                recordShortSamePitchSilence()
                 note += frame
                 changeBuf = ArrayList()
                 silenceBuf = ArrayList()
@@ -78,7 +129,10 @@ class NoteSegmenter(
             }
         }
         flushNote()
-        return events
+        return SegmentationResult(
+            events = events,
+            diagnostics = SegmentationDiagnostics(issues = issues, observedSilences = silences),
+        )
     }
 
     private fun toEvent(note: List<AnalysisFrame>): NoteEvent? {

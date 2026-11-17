@@ -19,12 +19,19 @@ object PassageAnalyzer {
         return used.push(samples)
     }
 
+    fun analyze(
+        samples: FloatArray,
+        sampleRate: Int = PracticeFragments.SAMPLE_RATE,
+        segmenter: NoteSegmenter = NoteSegmenter(),
+        engine: AnalysisEngine? = null,
+    ): SegmentationResult = segmenter.segmentWithReport(frames(samples, sampleRate, engine = engine))
+
     fun events(
         samples: FloatArray,
         sampleRate: Int = PracticeFragments.SAMPLE_RATE,
         segmenter: NoteSegmenter = NoteSegmenter(),
         engine: AnalysisEngine? = null,
-    ): List<NoteEvent> = segmenter.segment(frames(samples, sampleRate, engine = engine))
+    ): List<NoteEvent> = analyze(samples, sampleRate, segmenter, engine).events
 
     fun take(
         takeId: String,
@@ -39,9 +46,11 @@ object PassageAnalyzer {
         audioDurationMs: Long? = StrictUserWav.durationMs(samples.size, sampleRate),
         timeWindowStartMs: Long? = 0L,
         timeWindowEndMs: Long? = StrictUserWav.durationMs(samples.size, sampleRate),
-    ): PerformanceTake = PracticeFragments.buildTake(
+    ): PerformanceTake {
+        val report = analyze(samples, sampleRate, segmenter)
+        return PracticeFragments.buildTake(
         takeId = takeId,
-        events = events(samples, sampleRate, segmenter),
+        events = report.events,
         reference = reference,
         rendition = rendition,
         source = source,
@@ -50,7 +59,9 @@ object PassageAnalyzer {
         audioDurationMs = audioDurationMs,
         timeWindowStartMs = timeWindowStartMs,
         timeWindowEndMs = timeWindowEndMs,
-    )
+        segmentation = report.diagnostics,
+        )
+    }
 
     fun takeFromRendition(
         rendition: PracticeFragments.Rendition,

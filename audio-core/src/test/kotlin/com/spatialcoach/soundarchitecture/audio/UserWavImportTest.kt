@@ -168,34 +168,17 @@ class UserWavImportTest {
         assertTrue(comparison.comparable)
         assertEquals(ImprovementVerdict.INCONCLUSIVE_LOW_COVERAGE, comparison.verdict)
         assertTrue(comparison.suggestions.any { "不能下改善结论" in it })
-        assertTrue(sparse.let { TakeComparator.alignWithProcessedReference(it).coverage.missing >= 2 })
+        assertTrue((TakeComparator.alignWithProcessedReference(sparse).coverage.missing ?: -1) >= 2)
     }
 
     @Test
-    fun samePitchRepeatsAreTestedAndLimitationIsExplicitIfUnreliable() {
-        val notes = MutableList(0) { PracticeFragments.SynthNote(0, 0, 0.0) }.toMutableList()
-        // 4 个 A4：160 ms 发音 + 100 ms 间隔，贴近内置 demo 的短同音。
-        var t = 0L
-        repeat(4) {
-            notes += PracticeFragments.SynthNote(t, 160, Tuning.A4_HZ)
-            t += 260L
-        }
-        val pcm = PracticeFragments.renderNotes(notes, tailMs = 200L)
-        val events = PassageAnalyzer.events(pcm)
-        val stableA4 = events.filter { it.stable && it.noteName == "A4" }
-        if (stableA4.size == 4) {
-            val starts = stableA4.map { it.startMs }
-            for (i in 1 until starts.size) {
-                val gap = starts[i] - starts[i - 1]
-                assertTrue(abs(gap - 260L) <= 80L, "gap=$gap starts=$starts")
-            }
-        } else {
-            assertTrue(
-                ReviewText.REPEAT_LIMIT.contains("同音"),
-                "短间隔同音分段不可靠时必须有明确限制，events=${events.map { it.noteName to it.startMs }}",
-            )
-            assertTrue(stableA4.size < 4)
-        }
+    fun samePitchRepeatsDelegateToCountabilityGate() {
+        // 严格用例见 EventCountabilityTest：有间隔则断言 4 事件与时间；不能分清则缺/多音为 null。
+        val starts = listOf(0L, 400L, 800L, 1200L)
+        val notes = starts.map { PracticeFragments.SynthNote(it, 200L, Tuning.A4_HZ) }
+        val pcm = PracticeFragments.renderNotes(notes, tailMs = 250L)
+        val events = PassageAnalyzer.events(pcm).filter { it.stable && it.noteName == "A4" }
+        assertEquals(4, events.size, "spaced A4 events=${events.map { it.startMs }}")
     }
 
     @Test

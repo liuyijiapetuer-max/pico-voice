@@ -42,6 +42,39 @@ enum class InputSource {
  * 一次可追溯的演奏记录。两次比较必须同一 [fragmentId]、同一节拍参考、同一目标表，且都已确认参考。
  * [timeWindowStartMs] 到 [timeWindowEndMs] 是分析用的文件窗口；默认从 0 到文件时长，不裁开头静音、不平移对齐。
  */
+enum class SegmentationIssueKind {
+    SHORT_SILENCE_SAME_PITCH,
+    REFERENCE_REPEAT_UNSEPARATED,
+    GLIDE_OR_UNSTABLE,
+}
+
+data class SegmentationIssue(
+    val kind: SegmentationIssueKind,
+    val startMs: Long,
+    val endMs: Long,
+    val observedSilenceMs: Long? = null,
+    val detail: String,
+)
+
+data class ObservedSilence(
+    val startMs: Long,
+    val endMs: Long,
+) {
+    val durationMs: Long get() = (endMs - startMs).coerceAtLeast(0L)
+}
+
+data class SegmentationDiagnostics(
+    val issues: List<SegmentationIssue> = emptyList(),
+    val observedSilences: List<ObservedSilence> = emptyList(),
+) {
+    val isEmpty: Boolean get() = issues.isEmpty()
+}
+
+data class SegmentationResult(
+    val events: List<NoteEvent>,
+    val diagnostics: SegmentationDiagnostics = SegmentationDiagnostics(),
+)
+
 data class PerformanceTake(
     val takeId: String,
     val fragmentId: String,
@@ -55,6 +88,7 @@ data class PerformanceTake(
     val audioDurationMs: Long? = null,
     val timeWindowStartMs: Long? = null,
     val timeWindowEndMs: Long? = null,
+    val segmentation: SegmentationDiagnostics = SegmentationDiagnostics(),
 )
 
 data class TargetNote(

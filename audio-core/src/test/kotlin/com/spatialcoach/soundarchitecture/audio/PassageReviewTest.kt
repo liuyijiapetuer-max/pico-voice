@@ -268,7 +268,8 @@ class PassageReviewTest {
             val hz = start + (end - start) * t
             (0.4 * kotlin.math.sin(2.0 * kotlin.math.PI * hz * i / sr)).toFloat()
         }
-        val events = PassageAnalyzer.events(pcm)
+        val report = PassageAnalyzer.analyze(pcm)
+        val events = report.events
         val stable = events.filter { it.stable }
         assertTrue(stable.size <= 1, "glide split into stable notes: ${events.map { describe(it) }}")
         assertTrue(
@@ -291,8 +292,12 @@ class PassageReviewTest {
             rhythm = null,
             targets = fakeTargets.targets,
             events = events,
+            segmentation = report.diagnostics,
         )
         val aligned = TakeComparator.align(take, fakeTargets)
+        assertEquals(CountabilityStatus.INDETERMINATE, aligned.coverage.countability)
+        assertNull(aligned.coverage.missing)
+        assertNull(aligned.coverage.extra)
         val confident = aligned.items.filter { it.kind == AlignmentKind.MATCH || it.kind == AlignmentKind.WRONG_NOTE }
         assertTrue(confident.size <= 1, "glide should not become a confident two-note transcription: $confident")
         assertTrue(

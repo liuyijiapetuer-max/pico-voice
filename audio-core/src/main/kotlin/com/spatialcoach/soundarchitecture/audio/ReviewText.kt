@@ -10,7 +10,7 @@ object ReviewText {
     const val LIMITS =
         "只支持单旋律，且只对照固定练习谱 practice-melody-v1（四拍 A4–C5–G4–E4）。慢滑音会标成不够稳定。不做复调，也不自动跟谱。"
     const val REPEAT_LIMIT =
-        "相邻同音且间隔过短时，分段可能合并或漏计；这种情况下不作确定的缺音或多音结论。"
+        "相邻同音若缺少可观察的起音或足够无声分隔，或出现短间隔合并、滑音、不够稳定，缺音/多音会标为不可判定，界面不显示确定数字。"
     const val WINDOW_BIAS_NOTE =
         "分析窗可能把参考后三音标早约 36–38 ms，参考自身节奏平均偏差约 28 ms。判断赶拍或拖拍请看「相对同处理参考」的差值。相对谱面的原始时差会保留，不会偷偷减掉整段统一延迟。"
     const val NEAREST_VS_TARGET =
@@ -52,8 +52,17 @@ object ReviewText {
         if (score == null) "$label  无（没有可计入的对齐样本）"
         else "$label  平均偏差 ${score.meanAbs.roundToInt()} ${score.unit}（n=${score.count}）"
 
-    fun coverageLine(label: String, coverage: AlignmentCoverage): String =
-        "$label 覆盖率 ${coverage.rateText()}  对准${coverage.correctSlots} 错音${coverage.wrongNotes} 缺音${coverage.missing} 多音${coverage.extra}"
+    fun coverageLine(label: String, coverage: AlignmentCoverage): String = coverageDetail(label, coverage)
+
+    fun coverageDetail(label: String, coverage: AlignmentCoverage): String {
+        val head = "$label 覆盖率 ${coverage.rateText()}  对准${coverage.correctSlots} 错音${coverage.wrongNotes}"
+        return if (coverage.countsDeterminate) {
+            "$head 缺音${coverage.missing} 多音${coverage.extra}"
+        } else {
+            val why = coverage.countabilityReason?.let { " $it" } ?: ""
+            "$head 缺音/多音不可判定，不发布确定计数。$why"
+        }
+    }
 
     fun takeMetaLine(take: PerformanceTake): String {
         val name = take.sourceName ?: take.takeId

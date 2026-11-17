@@ -20,11 +20,14 @@ object UserTakeFactory {
         referenceConfirmed: Boolean,
         reference: PracticeReference = PracticeFragments.REFERENCE_V1,
         limits: WavLimits = StrictUserWav.DEFAULT_LIMITS,
+        cancelled: () -> Boolean = { false },
     ): UserTakeLoadResult {
         val rejected = bindRejected(referenceConfirmed, reference)
         if (rejected != null) return UserTakeLoadResult.Failed(rejected)
         return try {
-            val wav = StrictUserWav.decode(bytes, limits)
+            if (cancelled()) return UserTakeLoadResult.Failed("导入已取消或已失效，已停止分析。")
+            val wav = StrictUserWav.decode(bytes, limits, cancelled)
+            if (cancelled()) return UserTakeLoadResult.Failed("导入已取消或已失效，已停止分析。")
             UserTakeLoadResult.Ok(toTake(takeId, sourceName, wav, reference))
         } catch (e: UserWavException) {
             UserTakeLoadResult.Failed(e.message ?: "WAV 无法解码。")
@@ -39,11 +42,14 @@ object UserTakeFactory {
         referenceConfirmed: Boolean,
         reference: PracticeReference = PracticeFragments.REFERENCE_V1,
         limits: WavLimits = StrictUserWav.DEFAULT_LIMITS,
+        cancelled: () -> Boolean = { false },
     ): UserTakeLoadResult {
         val rejected = bindRejected(referenceConfirmed, reference)
         if (rejected != null) return UserTakeLoadResult.Failed(rejected)
         return try {
-            val wav = StrictUserWav.decodeStream(stream, knownLength, limits)
+            if (cancelled()) return UserTakeLoadResult.Failed("导入已取消或已失效，已停止分析。")
+            val wav = StrictUserWav.decodeStream(stream, knownLength, limits, cancelled)
+            if (cancelled()) return UserTakeLoadResult.Failed("导入已取消或已失效，已停止分析。")
             UserTakeLoadResult.Ok(toTake(takeId, sourceName, wav, reference))
         } catch (e: UserWavException) {
             UserTakeLoadResult.Failed(e.message ?: "WAV 无法解码。")
@@ -66,10 +72,10 @@ object UserTakeFactory {
         wav: DecodedUserWav,
         reference: PracticeReference,
     ): PerformanceTake {
-        val events = PassageAnalyzer.events(wav.samples, wav.sampleRate)
+        val report = PassageAnalyzer.analyze(wav.samples, wav.sampleRate)
         return PracticeFragments.buildTake(
             takeId = takeId,
-            events = events,
+            events = report.events,
             reference = reference,
             rendition = null,
             source = InputSource.USER_WAV_FILE,
@@ -78,6 +84,7 @@ object UserTakeFactory {
             audioDurationMs = wav.durationMs,
             timeWindowStartMs = 0L,
             timeWindowEndMs = wav.durationMs,
+            segmentation = report.diagnostics,
         )
     }
 }
