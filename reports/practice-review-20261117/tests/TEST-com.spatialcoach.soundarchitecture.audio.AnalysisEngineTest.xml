@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-17T03:51:05.767Z" hostname="SPACE" time="0.041">
+  <properties/>
+  <testcase name="silenceHasNoPitchAndLowLevel" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.0"/>
+  <testcase name="practiceSentenceMentionsSharpnessWhenCentsAreHigh" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="whiteNoiseHasNoDefinitePitchAndCoachAbstains" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.002"/>
+  <testcase name="louderSineHasHigherRms" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.0"/>
+  <testcase name="spectrumPeakNearOneKilohertz" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="c4SineMapsToC4" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="twoImpulsesGiveHalfSecondOnsetInterval" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.028"/>
+  <testcase name="wavRoundTripPreservesSineFrequency" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.002"/>
+  <testcase name="quietBelowGateHasNoPitch" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="a4SharpTwentyFiveCentsStaysA4AndPositive" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="a4SineIsWithinFiveCents" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <testcase name="a4FlatTwentyFiveCentsStaysA4AndNegative" classname="com.spatialcoach.soundarchitecture.audio.AnalysisEngineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

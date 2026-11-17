@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.StageMappingTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-17T03:51:05.809Z" hostname="SPACE" time="0.01">
+  <properties/>
+  <testcase name="twentyFiveCentsMapsRightAndBack" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.002"/>
+  <testcase name="probeTwentyFiveCentsSharpStaysA4AndPositive" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.001"/>
+  <testcase name="unknownEntityIsIgnored" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.001"/>
+  <testcase name="probeAtA4OnRulerReadsA4AndNearZeroCents" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.0"/>
+  <testcase name="a4RoundTripsThroughY" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.001"/>
+  <testcase name="currentMarkerFollowsHandOnlyWhenPressedAndVoiced" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.0"/>
+  <testcase name="modeToggleIsSingleSwitch" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.002"/>
+  <testcase name="fanHitReportsBandAndDoesNotFollow" classname="com.spatialcoach.soundarchitecture.audio.StageMappingTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
