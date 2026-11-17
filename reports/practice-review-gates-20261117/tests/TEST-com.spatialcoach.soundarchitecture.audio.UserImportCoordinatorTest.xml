@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-17T04:33:49.523Z" hostname="SPACE" time="1.395">
+  <properties/>
+  <testcase name="sameSlotLateRequestDoesNotOverrideNewerPublish" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.288"/>
+  <testcase name="resumeDemoInvalidatesInFlightLatePublish" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.102"/>
+  <testcase name="differentSlotsDoNotInvalidateEachOther" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.406"/>
+  <testcase name="playReferenceStyleInvalidationDoesNotClearTheOtherPublishedSlot" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.295"/>
+  <testcase name="referenceChangeInvalidatesInFlightLatePublish" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.098"/>
+  <testcase name="sameSlotFailedNewerDoesNotRestoreLateSuccess" classname="com.spatialcoach.soundarchitecture.audio.UserImportCoordinatorTest" time="0.205"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-17T04:33:50.920Z" hostname="SPACE" time="1.54">
+  <properties/>
+  <testcase name="unconfirmedFileIsNotBoundToOfficialFragment" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.002"/>
+  <testcase name="lowCoverageRefusesImprovementVerdict" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.356"/>
+  <testcase name="samePitchRepeatsDelegateToCountabilityGate" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.063"/>
+  <testcase name="streamIsClosedByCallerAndTooLargeIsRejectedBeforeFullDecode" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.114"/>
+  <testcase name="fiftyCentBoundaryFollowsNearestMidiNotASilentStamp" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.191"/>
+  <testcase name="unconfirmedTakesAreNotComparableEvenIfMetadataLooksOfficial" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.193"/>
+  <testcase name="leadingSilenceIsNotTrimmedOrShifted" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.201"/>
+  <testcase name="engineResetPreventsOnsetLeakAcrossTakes" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.118"/>
+  <testcase name="rejectsStereoAndWrongRateAndBitDepthAndTruncation" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.016"/>
+  <testcase name="officialWavRoundTripBuildsTwoComparableTakes" classname="com.spatialcoach.soundarchitecture.audio.UserWavImportTest" time="0.286"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

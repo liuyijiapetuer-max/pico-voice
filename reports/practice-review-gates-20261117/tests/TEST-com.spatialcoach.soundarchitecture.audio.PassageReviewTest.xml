@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-17T04:33:47.848Z" hostname="SPACE" time="1.665">
+  <properties/>
+  <testcase name="differentFragmentIsRejected" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.093"/>
+  <testcase name="unknownTargetsDoNotMarkWrongNotes" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.093"/>
+  <testcase name="plusTwentyFiveCentsIsIntonationNotWrongNote" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.094"/>
+  <testcase name="whiteNoiseDoesNotInventStableNotes" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.051"/>
+  <testcase name="differentRhythmIsRejected" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.097"/>
+  <testcase name="quietSineBelowGateHasNoEvents" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.016"/>
+  <testcase name="slowGlideIsMarkedAndNotAConfidentWrongNoteSequence" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.086"/>
+  <testcase name="globalEightyMsDelayIsReportedAndNotSubtracted" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.191"/>
+  <testcase name="referenceMelodyYieldsFourNotesThroughEngine" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.094"/>
+  <testcase name="explicitGridFillsBeatsAndMissingGridLeavesBeatNull" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.093"/>
+  <testcase name="extraNoteIsExplicitAndDoesNotBreakMatches" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.117"/>
+  <testcase name="missingMiddleNoteDoesNotShiftTheRest" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.078"/>
+  <testcase name="wrongNoteIsExplicitAndDoesNotShiftSequence" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.094"/>
+  <testcase name="firstTakeVersusRetakeImprovesPitchAndRhythmWithExplicitFaults" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.375"/>
+  <testcase name="minusTwentyFiveCentsIsIntonationNotWrongNote" classname="com.spatialcoach.soundarchitecture.audio.PassageReviewTest" time="0.093"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :audio-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :audio-core:processResources NO-SOURCE
+> Task :audio-core:processTestResources NO-SOURCE
+> Task :audio-core:compileKotlin
+> Task :audio-core:compileJava NO-SOURCE
+> Task :audio-core:classes UP-TO-DATE
+> Task :audio-core:jar
+> Task :audio-core:compileTestKotlin
+> Task :audio-core:compileTestJava NO-SOURCE
+> Task :audio-core:testClasses UP-TO-DATE
+> Task :audio-core:test
+
+BUILD SUCCESSFUL in 24s
+4 actionable tasks: 4 executed
