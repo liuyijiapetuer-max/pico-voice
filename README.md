@@ -15,14 +15,17 @@
 
 ## 演奏复验
 
-练习窗增加「演奏复验」：把一段单旋律切成可追溯的音符事件（时间、音名、第几拍、音分与毫秒偏差），并在同一参考上比较第一遍与重奏的音准、节奏分项。
+练习窗区分两件事：用户把自己演奏的 WAV 导入为第一遍/重奏并比较；以及独立的内置合成示范（不能当作用户成果）。
 
-- 当前只支持内置合成练习片段 `practice-melody-v1`（120 BPM，节拍原点 0 ms，四拍 A4–C5–G4–E4）。不是用户自选文件，也不是真麦。界面已写明「文件回放（合成音轨）」。
-- 「第几拍」只在有显式 BPM 和原点时填写；没有节拍参考时为「无节拍参考」。起音间隔不再称作「拍」。
-- 相对最近律音的音分不等于谱面目标。目标未知时不判错音。缺音、多音、错音、未对齐会分开列出，不用总分代替分项，也不扣除整段统一延迟。
-- 只做单旋律。慢滑音会标成不够稳定，不伪装成确定音列。不做复调，也不自动跟谱。舞台上拖动音高尺仍只是查看，不是 DSP 修音。
-- 操作：打开下方练习提示窗 →「播放参考」或「记为第一遍」（内置含偏差示范）→「记为重奏」（内置已改善示范）→「比较第一遍与重奏」。看完后可用「恢复舞台演示回放」。演示播放循环时会重置分析引擎，避免跨圈污染起音间隔。
+- 参考固定为 `practice-melody-v1`（120 BPM，原点 0 ms，四拍谱面目标 A4–C5–G4–E4）。不支持其他曲目。导入前必须确认同一参考；未确认不会把任意文件标成该片段。
+- 用户路径：确认参考 →「导入第一遍」/「导入重奏」（系统文档选择器，只读用户授权的文件）→「比较第一遍与重奏」。界面显示文件名、来源（录音文件分析，不是实时采集）、参考和时间窗口。开头静音不会自动裁掉，也不会平移对齐。
+- 只接受 PCM16 单声道 44.1 kHz 的 WAV；格式不支持、文件过大或过长、无法对齐时给出原因，**不会回退到合成示范**。系统选择器沿用 PICO 官方样例的 `ActivityResultContracts.OpenDocument()`，本机尚未做设备点按验收。
+- 「第几拍」只在有显式 BPM 和原点时填写。判断赶拍/拖拍请看「相对同处理参考」的差值：参考自身经同一分析后，后三音大约早 36–38 ms，节奏平均偏差约 28 ms。相对谱面的原始时差会保留，不偷偷减整段统一延迟，也不能把绝对时差直接写成用户赶拍。
+- 最近律音（当前帧音准靠近哪个十二平均律音）和谱面目标（练习谱既定音）在界面上分开标注。错音、缺音、多音与匹配覆盖率单列；对准音的平均音分不含错音，不能当作整体改善。缺音过多时拒绝改善结论。
+- 只做单旋律。慢滑音、相邻同音且间隔过短时，分段可能不够稳，不作确定缺/多音结论。不做复调，也不自动跟谱。舞台拖动只是查看，不是 DSP 修音。不做真麦。
+- 内置合成示范有独立按钮，只用于预览分析，不会写入用户第一遍/重奏。
 - 验证方式（不要跑 `assembleDebug`，以免覆盖现有 ee1ab40 APK）：
+
 
 ```powershell
 $env:JAVA_HOME='E:\software\Dev\androidstudio\androidStudio\jbr'
@@ -32,7 +35,7 @@ Set-Location 'G:\minimaxworkspace\pico-sonosphere'
 & $gradle --no-daemon :audio-core:test :app:compileDebugKotlin --console=plain
 ```
 
-更完整的证据与未验项见 [reports/practice-review-20261117/](reports/practice-review-20261117/)。本项未装机、未头显、未实时麦、未出新 APK、未跑 30 分钟稳定性。
+证据见 [reports/practice-review-20261117/](reports/practice-review-20261117/)（上一轮内核/示范）与 [reports/practice-review-user-wav-20261117/](reports/practice-review-user-wav-20261117/)（用户 WAV 导入）。本项未装机、未头显、未实时麦、未出新 APK、未跑新的 30 分钟稳定性。
 
 文案把「能演示」和「已真机验证」分开。下面的操作说明是模拟器上的文件回放演示，模拟器没有真麦。
 
@@ -73,13 +76,10 @@ $cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd
 
 ## Commit ↔ APK 对账（M2）
 
-已推送的 M2 源码提交是 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3)。本机构建的 debug APK（不进 git）为：
+历史官方通过仍以已推送的 M2 提交 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3) 与 [stability/report-20261112-085904.md](stability/report-20261112-085904.md) 为准（emulator-5554，文件回放，不是头显，也不是继承任何旧通过）。当时对账的 SHA256 是 `287009CBC2764E2F2C7E37E2019C0BC8893549F68DE032C85E71DC49356E5D1A`，完整表格见 [reports/m2-commit-apk.md](reports/m2-commit-apk.md)。
 
-- 路径：`G:\minimaxworkspace\pico-sonosphere\app\build\outputs\apk\debug\app-debug.apk`
-- 字节数：31,688,250
-- SHA256：`287009CBC2764E2F2C7E37E2019C0BC8893549F68DE032C85E71DC49356E5D1A`
+**当前磁盘上的** `app/build/outputs/apk/debug/app-debug.apk` 已不是 8ba442c 那一包：字节数仍为 31,688,250，mtime 2026-11-17 00:26:57（Asia/Shanghai），SHA256 为 `EF774371B45129596F12F134CB196CBA811E1651235BDDE94D8159790D50AE3D`，对应 ee1ab40。请勿再跑 `assembleDebug` 覆盖它。
 
-完整表格见 [reports/m2-commit-apk.md](reports/m2-commit-apk.md)。这是模拟器文件回放演示的对账，不是头显或实时拾音验收。
+本轮演奏复验（用户 WAV 导入）只有新源码与单测/编译证据，**未打新 APK，未跑新的 30 分钟稳定性**，不能继承上述历史通过结论。
 
-官方 30 分钟稳定性通过以 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3) 与 [stability/report-20261112-085904.md](stability/report-20261112-085904.md) 为准（emulator-5554，文件回放，不是头显，也不是继承任何旧通过）。
 

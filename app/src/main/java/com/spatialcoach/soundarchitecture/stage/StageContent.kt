@@ -84,7 +84,7 @@ fun StageContent() {
                 if (frames == null) {
                     AnalysisBus.onPracticeCancelled()
                 } else {
-                    AnalysisBus.completePractice(frames, rendition, request.storeAs)
+                    AnalysisBus.completeDemo(frames, rendition)
                 }
             }
             PracticeSessionRequest.Action.RESUME_DEMO -> {

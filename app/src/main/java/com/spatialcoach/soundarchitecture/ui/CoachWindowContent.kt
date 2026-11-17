@@ -1,5 +1,8 @@
 package com.spatialcoach.soundarchitecture.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -10,15 +13,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pico.spatial.ui.design.Text
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.PracticeFragments
 import com.spatialcoach.soundarchitecture.audio.ReviewText
+import com.spatialcoach.soundarchitecture.audio.UserTakeLoadResult
+import com.spatialcoach.soundarchitecture.audio.UserWavImporter
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun CoachWindowContent() {
@@ -26,7 +40,35 @@ fun CoachWindowContent() {
     val cue = AnalysisBus.practiceCue
     val practice = AnalysisBus.mode == ViewMode.PRACTICE
     val alignment = AnalysisBus.lastAlignment
+    val demoAlignment = AnalysisBus.lastDemoAlignment
     val comparison = AnalysisBus.comparison
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var referenceConfirmed by remember { mutableStateOf(false) }
+    var pendingSlot by remember { mutableStateOf<String?>(null) }
+
+    val openWav = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        val slot = pendingSlot
+        pendingSlot = null
+        if (uri == null) {
+            AnalysisBus.onImportCancelled()
+            return@rememberLauncherForActivityResult
+        }
+        if (!referenceConfirmed || slot == null) {
+            AnalysisBus.failImport("未确认固定练习谱，或导入槽位无效。")
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                UserWavImporter.load(context, uri, takeId = slot, referenceConfirmed = true)
+            }
+            when (result) {
+                is UserTakeLoadResult.Ok -> AnalysisBus.storeUserTake(slot, result.take)
+                is UserTakeLoadResult.Failed -> AnalysisBus.failImport(result.reason)
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -36,7 +78,7 @@ fun CoachWindowContent() {
     ) {
         Text(if (practice) "练习提示" else "练习提示（专业模式也可对照）", color = WindowTheme.Amber, fontSize = 20.sp)
         Spacer(Modifier.height(12.dp))
-        Text("音准  ${cue.pitchLabel}", color = WindowTheme.Amber, fontSize = 18.sp)
+        Text("当前帧 · 最近律音  ${cue.pitchLabel}", color = WindowTheme.Amber, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
         Text("起音间隔  ${cue.rhythmLabel}", color = WindowTheme.AmberDim, fontSize = 16.sp)
         Spacer(Modifier.height(8.dp))
@@ -48,7 +90,7 @@ fun CoachWindowContent() {
         if (!practice && cents != null && pitchHz != null) {
             Spacer(Modifier.height(16.dp))
             Text(
-                "${frame.noteName ?: "—"}    ${"%.1f".format(pitchHz)} Hz    ${signedCents(cents)}",
+                "最近律音 ${frame.noteName ?: "—"}    ${"%.1f".format(pitchHz)} Hz    ${signedCents(cents)}（不是谱面目标）",
                 color = WindowTheme.Ink,
                 fontSize = 13.sp,
             )
@@ -67,38 +109,67 @@ fun CoachWindowContent() {
         Text("${AnalysisBus.INPUT_LABEL}。${AnalysisBus.DEVICE_NOTE}。", color = WindowTheme.Ink, fontSize = 12.sp)
 
         Spacer(Modifier.height(24.dp))
-        Text("演奏复验", color = WindowTheme.Amber, fontSize = 18.sp)
+        Text("演奏复验 · 用户导入", color = WindowTheme.Amber, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
         Text(AnalysisBus.REVIEW_NOTE, color = WindowTheme.Ink, fontSize = 12.sp)
         Spacer(Modifier.height(6.dp))
         Text(
-            "片段 ${PracticeFragments.ID_V1} · 120 BPM · 原点 0 ms · 四拍 A4 C5 G4 E4。${ReviewText.SOURCE_DISCLAIMER}",
+            "固定练习谱 ${PracticeFragments.ID_V1} · 120 BPM · 原点 0 ms · 四拍谱面目标 A4 C5 G4 E4。不支持其他曲目。${ReviewText.SOURCE_DISCLAIMER}",
             color = WindowTheme.Ink,
             fontSize = 12.sp,
         )
         Spacer(Modifier.height(6.dp))
-        Text(ReviewText.LIMITS, color = WindowTheme.Ink, fontSize = 12.sp)
+        Text(ReviewText.NEAREST_VS_TARGET, color = WindowTheme.Ink, fontSize = 12.sp)
+        Spacer(Modifier.height(6.dp))
+        Text(ReviewText.WINDOW_BIAS_NOTE, color = WindowTheme.Ink, fontSize = 12.sp)
+        Spacer(Modifier.height(6.dp))
+        Text("${ReviewText.LIMITS} ${ReviewText.REPEAT_LIMIT} 开头静音不会自动裁掉，也不会平移到与参考对齐。只接受 PCM16 单声道 44.1 kHz WAV。", color = WindowTheme.Ink, fontSize = 12.sp)
         Spacer(Modifier.height(10.dp))
         Text(AnalysisBus.practiceStatus, color = WindowTheme.Good, fontSize = 14.sp)
         Spacer(Modifier.height(12.dp))
-        ReviewAction("播放参考（对准、准点）") {
-            AnalysisBus.requestPracticePlay(PracticeFragments.Rendition.REFERENCE, null)
+        ReviewAction(
+            if (referenceConfirmed)
+                "已确认：这是 practice-melody-v1 的演奏（再点可取消确认）"
+            else
+                "确认这是 practice-melody-v1（四拍 A4–C5–G4–E4）的演奏，然后才能导入",
+        ) { referenceConfirmed = !referenceConfirmed }
+        ReviewAction("导入第一遍（系统选文件）") {
+            if (!referenceConfirmed) {
+                AnalysisBus.failImport("请先确认固定练习谱。")
+            } else {
+                pendingSlot = "first"
+                openWav.launch(arrayOf("audio/wav", "audio/x-wav", "audio/wave", "audio/*"))
+            }
         }
-        ReviewAction("记为第一遍（内置含偏差示范）") {
-            AnalysisBus.requestPracticePlay(PracticeFragments.Rendition.FIRST_TAKE, "first")
-        }
-        ReviewAction("记为重奏（内置已改善示范）") {
-            AnalysisBus.requestPracticePlay(PracticeFragments.Rendition.RETAKE, "retake")
+        ReviewAction("导入重奏（系统选文件）") {
+            if (!referenceConfirmed) {
+                AnalysisBus.failImport("请先确认固定练习谱。")
+            } else {
+                pendingSlot = "retake"
+                openWav.launch(arrayOf("audio/wav", "audio/x-wav", "audio/wave", "audio/*"))
+            }
         }
         ReviewAction("比较第一遍与重奏") { AnalysisBus.compareTakes() }
         ReviewAction("恢复舞台演示回放") { AnalysisBus.requestResumeDemo() }
 
+        AnalysisBus.takeFirst?.let { take ->
+            Spacer(Modifier.height(12.dp))
+            Text("已导入第一遍", color = WindowTheme.AmberDim, fontSize = 14.sp)
+            Text(ReviewText.takeMetaLine(take), color = WindowTheme.Ink, fontSize = 12.sp)
+        }
+        AnalysisBus.takeRetake?.let { take ->
+            Spacer(Modifier.height(8.dp))
+            Text("已导入重奏", color = WindowTheme.AmberDim, fontSize = 14.sp)
+            Text(ReviewText.takeMetaLine(take), color = WindowTheme.Ink, fontSize = 12.sp)
+        }
+
         if (alignment != null) {
             Spacer(Modifier.height(16.dp))
-            Text("本遍事件（相对参考）", color = WindowTheme.Amber, fontSize = 16.sp)
+            Text("最近一次用户导入（相对谱面目标 / 相对同处理参考）", color = WindowTheme.Amber, fontSize = 16.sp)
             Spacer(Modifier.height(6.dp))
-            Text(ReviewText.subscoreLine("音准", alignment.pitch), color = WindowTheme.AmberDim, fontSize = 13.sp)
-            Text(ReviewText.subscoreLine("节奏", alignment.rhythm), color = WindowTheme.AmberDim, fontSize = 13.sp)
+            Text(ReviewText.coverageLine("本遍", alignment.coverage), color = WindowTheme.AmberDim, fontSize = 13.sp)
+            Text(ReviewText.subscoreLine("对准音音分（不含错音）", alignment.pitch), color = WindowTheme.AmberDim, fontSize = 13.sp)
+            Text(ReviewText.subscoreLine("节奏相对谱面（含检测窗偏差）", alignment.rhythm), color = WindowTheme.AmberDim, fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
             for (item in alignment.items) {
                 Text(ReviewText.alignmentLine(item), color = WindowTheme.Ink, fontSize = 12.sp)
@@ -108,7 +179,7 @@ fun CoachWindowContent() {
 
         if (comparison != null) {
             Spacer(Modifier.height(16.dp))
-            Text("第一遍与重奏比较", color = WindowTheme.Amber, fontSize = 16.sp)
+            Text("用户第一遍与重奏比较", color = WindowTheme.Amber, fontSize = 16.sp)
             Spacer(Modifier.height(6.dp))
             if (!comparison.comparable) {
                 Text(comparison.rejectedReason ?: "不能比较", color = WindowTheme.Good, fontSize = 14.sp)
@@ -116,21 +187,11 @@ fun CoachWindowContent() {
                 val a = comparison.takeA
                 val b = comparison.takeB
                 if (a != null && b != null) {
-                    Text("音准  第一遍 ${scoreText(a.pitch)}  ·  重奏 ${scoreText(b.pitch)}", color = WindowTheme.AmberDim, fontSize = 13.sp)
-                    Text("节奏  第一遍 ${scoreText(a.rhythm)}  ·  重奏 ${scoreText(b.rhythm)}", color = WindowTheme.AmberDim, fontSize = 13.sp)
-                    Text("没有用总分代替分项。时差未扣除整段统一延迟。", color = WindowTheme.Ink, fontSize = 12.sp)
-                    Spacer(Modifier.height(8.dp))
-                    Text("第一遍", color = WindowTheme.AmberDim, fontSize = 13.sp)
-                    for (item in a.items) {
-                        Text(ReviewText.alignmentLine(item), color = WindowTheme.Ink, fontSize = 12.sp)
-                        Spacer(Modifier.height(3.dp))
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text("重奏", color = WindowTheme.AmberDim, fontSize = 13.sp)
-                    for (item in b.items) {
-                        Text(ReviewText.alignmentLine(item), color = WindowTheme.Ink, fontSize = 12.sp)
-                        Spacer(Modifier.height(3.dp))
-                    }
+                    Text(ReviewText.coverageLine("第一遍", a.coverage), color = WindowTheme.AmberDim, fontSize = 13.sp)
+                    Text(ReviewText.coverageLine("重奏", b.coverage), color = WindowTheme.AmberDim, fontSize = 13.sp)
+                    Text("对准音音分（不含错音）  第一遍 ${scoreText(a.pitch)}  ·  重奏 ${scoreText(b.pitch)}", color = WindowTheme.AmberDim, fontSize = 13.sp)
+                    Text("不能用排除错音后的平均音分宣称整体改善。错音/缺音/多音须单列。", color = WindowTheme.Ink, fontSize = 12.sp)
+                    Text(ReviewText.WINDOW_BIAS_NOTE, color = WindowTheme.Ink, fontSize = 12.sp)
                 }
                 Spacer(Modifier.height(8.dp))
                 Text("建议（有对照证据，不是 DSP 修音）", color = WindowTheme.Amber, fontSize = 14.sp)
@@ -138,6 +199,23 @@ fun CoachWindowContent() {
                     Spacer(Modifier.height(4.dp))
                     Text(line, color = WindowTheme.Good, fontSize = 13.sp)
                 }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        Text("内置合成示范（不是用户成果）", color = WindowTheme.Amber, fontSize = 18.sp)
+        Spacer(Modifier.height(6.dp))
+        Text(ReviewText.DEMO_DISCLAIMER, color = WindowTheme.Ink, fontSize = 12.sp)
+        ReviewAction("播放内置参考示范") { AnalysisBus.requestDemoPlay(PracticeFragments.Rendition.REFERENCE) }
+        ReviewAction("播放内置偏差示范") { AnalysisBus.requestDemoPlay(PracticeFragments.Rendition.FIRST_TAKE) }
+        ReviewAction("播放内置改善示范") { AnalysisBus.requestDemoPlay(PracticeFragments.Rendition.RETAKE) }
+        if (demoAlignment != null) {
+            Spacer(Modifier.height(8.dp))
+            Text("最近一次内置示范（仅预览）", color = WindowTheme.AmberDim, fontSize = 14.sp)
+            Text(ReviewText.coverageLine("示范", demoAlignment.coverage), color = WindowTheme.Ink, fontSize = 12.sp)
+            for (item in demoAlignment.items) {
+                Text(ReviewText.alignmentLine(item), color = WindowTheme.Ink, fontSize = 12.sp)
+                Spacer(Modifier.height(3.dp))
             }
         }
     }
