@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pico.spatial.ui.design.Text
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
+import com.spatialcoach.soundarchitecture.audio.CorrectionModeGate
+import com.spatialcoach.soundarchitecture.audio.CorrectionText
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 
 @Composable
@@ -70,6 +72,18 @@ fun DynamicsWindowContent() {
             }
             frame.onsetIntervalMs?.let {
                 Text("距上次起音 ${it} ms", color = WindowTheme.Ink, fontSize = 13.sp)
+            }
+        }
+        if (CorrectionModeGate.correctionVisible(AnalysisBus.mode)) {
+            val preview = AnalysisBus.correctionSession?.preview
+            Spacer(Modifier.height(8.dp))
+            if (preview == null) {
+                Text("专业模式修音证据：尚未生成预览。动态仍显示当前回放。", color = WindowTheme.Ink, fontSize = 12.sp)
+            } else {
+                Text("修音预览证据（RMS / 短脉冲残差，不是演奏复验）", color = WindowTheme.AmberDim, fontSize = 12.sp)
+                for (line in CorrectionText.evidencePanelLines(preview)) {
+                    Text(line, color = WindowTheme.Ink, fontSize = 12.sp)
+                }
             }
         }
         Spacer(Modifier.height(16.dp))

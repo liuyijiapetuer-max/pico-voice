@@ -27,6 +27,9 @@ import com.pico.spatial.ui.foundation.dsl.registerSystem
 import com.pico.spatial.ui.foundation.dsl.unregisterSystem
 import com.pico.spatial.ui.platform.containers.LocalSpatialNavigator
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
+import com.spatialcoach.soundarchitecture.audio.CorrectionClipPlayer
+import com.spatialcoach.soundarchitecture.audio.CorrectionModeGate
+import com.spatialcoach.soundarchitecture.audio.CorrectionText
 import com.spatialcoach.soundarchitecture.audio.FileDemoPlayer
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionPlayer
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionRequest
@@ -55,6 +58,11 @@ fun StageContent() {
             AnalysisBus.publish(frame)
         }
     }
+    val correctionPlayer = remember {
+        CorrectionClipPlayer(context) { frame ->
+            AnalysisBus.publish(frame)
+        }
+    }
     val field = remember { SoundField() }
 
     LaunchedEffect(Unit) {
@@ -76,6 +84,7 @@ fun StageContent() {
         when (request.action) {
             PracticeSessionRequest.Action.PLAY -> {
                 val rendition = request.rendition ?: return@LaunchedEffect
+                correctionPlayer.stop()
                 player.stop()
                 AnalysisBus.markPlaying(true)
                 val frames = withContext(Dispatchers.IO) {
@@ -88,10 +97,27 @@ fun StageContent() {
                 }
             }
             PracticeSessionRequest.Action.RESUME_DEMO -> {
+                correctionPlayer.stop()
                 practicePlayer.stop()
                 player.start()
                 AnalysisBus.markPlaying(true)
             }
+        }
+    }
+
+    val correctionListen = AnalysisBus.correctionListenRequest
+    LaunchedEffect(correctionListen?.id) {
+        val request = correctionListen ?: return@LaunchedEffect
+        practicePlayer.stop()
+        player.stop()
+        AnalysisBus.markPlaying(true)
+        val completed = withContext(Dispatchers.IO) {
+            correctionPlayer.play(request.clip)
+        }
+        if (completed) {
+            AnalysisBus.onCorrectionListenFinished()
+        } else {
+            AnalysisBus.onCorrectionListenCancelled()
         }
     }
 
@@ -111,6 +137,7 @@ fun StageContent() {
         onDispose {
             unregisterSystem<SoundFieldSystem>()
             SoundFieldRuntime.uninstall()
+            correctionPlayer.stop()
             practicePlayer.stop()
             player.stop()
             AnalysisBus.markPlaying(false)
@@ -211,9 +238,23 @@ private fun StageHud(modifier: Modifier = Modifier) {
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp),
         )
+        if (CorrectionModeGate.correctionVisible(mode) && AnalysisBus.correctionSession != null) {
+            Text(
+                AnalysisBus.correctionStatus,
+                color = Color(0xFFE8C48A),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Text(
+                CorrectionText.DRAG_IS_VIEW_ONLY + " " + CorrectionText.NOT_PERFORMANCE,
+                color = Color(0xFF8A97AD),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
         if (AnalysisBus.demoPausedForPractice) {
             Text(
-                "练习片段会话进行中或待恢复演示。${AnalysisBus.REVIEW_NOTE}",
+                "演示回放已暂停，可用第三窗「恢复舞台演示回放」。${AnalysisBus.REVIEW_NOTE}",
                 color = Color(0xFF8A97AD),
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 4.dp),

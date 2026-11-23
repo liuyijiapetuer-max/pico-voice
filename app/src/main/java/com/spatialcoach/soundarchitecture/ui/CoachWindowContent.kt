@@ -24,6 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pico.spatial.ui.design.Text
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
+import com.spatialcoach.soundarchitecture.audio.CorrectionListenSide
+import com.spatialcoach.soundarchitecture.audio.CorrectionModeGate
+import com.spatialcoach.soundarchitecture.audio.CorrectionOperatorKind
+import com.spatialcoach.soundarchitecture.audio.CorrectionText
 import com.spatialcoach.soundarchitecture.audio.PracticeFragments
 import com.spatialcoach.soundarchitecture.audio.ReviewText
 import com.spatialcoach.soundarchitecture.audio.UserTakeLoadResult
@@ -126,6 +130,10 @@ fun CoachWindowContent() {
         ModeToggle()
         Spacer(Modifier.height(16.dp))
         Text("${AnalysisBus.INPUT_LABEL}。${AnalysisBus.DEVICE_NOTE}。", color = WindowTheme.Ink, fontSize = 12.sp)
+
+        if (CorrectionModeGate.correctionVisible(AnalysisBus.mode)) {
+            ProfessionalCorrectionPanel()
+        }
 
         Spacer(Modifier.height(24.dp))
         Text("演奏复验 · 用户导入", color = WindowTheme.Amber, fontSize = 18.sp)
@@ -268,4 +276,67 @@ private fun scoreText(score: com.spatialcoach.soundarchitecture.audio.Subscore?)
 private fun signedCents(cents: Double): String {
     val v = cents.roundToInt()
     return if (v > 0) "+$v 音分" else "$v 音分"
+}
+
+
+@Composable
+private fun ProfessionalCorrectionPanel() {
+    val session = AnalysisBus.correctionSession
+    val preview = session?.preview
+    Spacer(Modifier.height(24.dp))
+    Text("修音预览 · 实验室夹具（专业模式）", color = WindowTheme.Amber, fontSize = 18.sp)
+    Spacer(Modifier.height(6.dp))
+    Text(CorrectionText.SOURCE_NOTE, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(4.dp))
+    Text(CorrectionText.NOT_PERFORMANCE, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(4.dp))
+    Text(CorrectionText.DRAG_IS_VIEW_ONLY, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(4.dp))
+    Text(CorrectionText.ACCEPTANCE, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(10.dp))
+    Text(AnalysisBus.correctionStatus, color = WindowTheme.Good, fontSize = 14.sp)
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "当前句段 ${AnalysisBus.correctionStartMs}–${AnalysisBus.correctionEndMs} ms · 操作 " +
+            when (AnalysisBus.correctionOperator) {
+                CorrectionOperatorKind.BAND_ATTENUATE -> "指定频段衰减（40–80 Hz，12 dB）"
+                CorrectionOperatorKind.DE_CLICK -> "保守去咕嗒"
+            },
+        color = WindowTheme.AmberDim,
+        fontSize = 13.sp,
+    )
+    Spacer(Modifier.height(8.dp))
+    ReviewAction("加载实验室夹具：A4 + 50 Hz 干扰") { AnalysisBus.loadLabCorrectionHum() }
+    ReviewAction("加载实验室夹具：A4 + 已知短脉冲") { AnalysisBus.loadLabCorrectionClicks() }
+    ReviewAction("标记句段：整段") {
+        val duration = session?.dry?.durationMs
+        if (duration != null) {
+            AnalysisBus.setCorrectionRange(0L, duration)
+        }
+    }
+    ReviewAction("标记句段：200–800 ms") { AnalysisBus.setCorrectionRange(200L, 800L) }
+    ReviewAction("选择指定频段衰减") { AnalysisBus.selectCorrectionOperator(CorrectionOperatorKind.BAND_ATTENUATE) }
+    ReviewAction("选择保守去咕嗒") { AnalysisBus.selectCorrectionOperator(CorrectionOperatorKind.DE_CLICK) }
+    ReviewAction("生成预览") { AnalysisBus.previewCorrection() }
+    ReviewAction("听干声") { AnalysisBus.requestCorrectionListen(CorrectionListenSide.DRY) }
+    ReviewAction("听湿声") { AnalysisBus.requestCorrectionListen(CorrectionListenSide.WET) }
+    ReviewAction("保留修前/修后对照") { AnalysisBus.retainCorrection() }
+    ReviewAction("撤销预览和对照") { AnalysisBus.discardCorrection() }
+    val readout = CorrectionModeGate.professionalReadout(AnalysisBus.mode, session)
+    if (readout != null) {
+        Spacer(Modifier.height(10.dp))
+        Text(readout, color = WindowTheme.Ink, fontSize = 12.sp)
+    }
+    if (preview != null) {
+        Spacer(Modifier.height(8.dp))
+        Text("预览证据（不是已修好，也不使用演奏复验文案）", color = WindowTheme.AmberDim, fontSize = 13.sp)
+        for (line in CorrectionText.evidencePanelLines(preview)) {
+            Spacer(Modifier.height(3.dp))
+            Text(line, color = WindowTheme.Ink, fontSize = 12.sp)
+        }
+    }
+    session?.retained?.let {
+        Spacer(Modifier.height(8.dp))
+        Text(CorrectionText.beforeAfterLine(session), color = WindowTheme.AmberDim, fontSize = 12.sp)
+    }
 }

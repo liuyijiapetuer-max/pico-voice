@@ -1,0 +1,18 @@
+openjdk version "21.0.6" 2025-01-21
+OpenJDK Runtime Environment (build 21.0.6+-13368085-b895.109)
+OpenJDK 64-Bit Server VM (build 21.0.6+-13368085-b895.109, mixed mode)
+> Task :audio-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :audio-core:compileKotlin UP-TO-DATE
+> Task :audio-core:compileJava NO-SOURCE
+> Task :audio-core:processResources NO-SOURCE
+> Task :audio-core:classes UP-TO-DATE
+> Task :audio-core:jar UP-TO-DATE
+> Task :audio-core:processTestResources NO-SOURCE
+> Task :audio-core:compileTestKotlin
+> Task :audio-core:compileTestJava NO-SOURCE
+> Task :audio-core:testClasses UP-TO-DATE
+> Task :audio-core:test
+
+BUILD SUCCESSFUL in 2s
+4 actionable tasks: 2 executed, 2 up-to-date
+GRADLE_EXIT=0

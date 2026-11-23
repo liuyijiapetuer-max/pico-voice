@@ -56,6 +56,24 @@ object AnalysisBus {
     var comparison by mutableStateOf<TakeComparison?>(null)
         private set
 
+    var correctionSession by mutableStateOf<CorrectionSession?>(null)
+        private set
+
+    var correctionOperator by mutableStateOf(CorrectionOperatorKind.BAND_ATTENUATE)
+        private set
+
+    var correctionStartMs by mutableStateOf(0L)
+        private set
+
+    var correctionEndMs by mutableStateOf(0L)
+        private set
+
+    var correctionStatus by mutableStateOf("尚未加载实验室夹具")
+        private set
+
+    var correctionListenRequest by mutableStateOf<CorrectionListenRequest?>(null)
+        private set
+
     /**
      * 用户导入发布的唯一状态门。所有写槽必须经过 [beginUserImport] / [publishUserImport]，
      * 与 [UserImportCoordinatorTest] 覆盖的同一套令牌规则。
@@ -63,6 +81,7 @@ object AnalysisBus {
     val userImports = UserImportCoordinator()
 
     private var requestSeq = 0L
+    private var correctionListenSeq = 0L
     private val importJobs = HashMap<ImportSlot, Job>()
 
     val practiceCue: PracticeCue
@@ -194,7 +213,142 @@ object AnalysisBus {
         comparison = s.comparison
         practiceStatus = s.status
     }
+
+    fun loadLabCorrectionHum() {
+        val dry = LabCorrectionFixtures.humUnderTone()
+        correctionSession = CorrectionWorkflow.start(LabCorrectionFixtures.HUM_FILE_ID, dry)
+        correctionOperator = CorrectionOperatorKind.BAND_ATTENUATE
+        correctionStartMs = 0L
+        correctionEndMs = dry.durationMs
+        correctionStatus = "已加载实验室夹具 lab-correction-hum-v1，默认句段为整段，操作是指定频段衰减（40–80 Hz，12 dB）。${CorrectionText.SOURCE_NOTE}"
+    }
+
+    fun loadLabCorrectionClicks() {
+        val dry = LabCorrectionFixtures.clicksOnTone()
+        correctionSession = CorrectionWorkflow.start(LabCorrectionFixtures.CLICK_FILE_ID, dry)
+        correctionOperator = CorrectionOperatorKind.DE_CLICK
+        correctionStartMs = 0L
+        correctionEndMs = dry.durationMs
+        correctionStatus = "已加载实验室夹具 lab-correction-click-v1，默认句段为整段，操作是保守去咕嗒。${CorrectionText.SOURCE_NOTE}"
+    }
+
+    fun selectCorrectionOperator(kind: CorrectionOperatorKind) {
+        correctionOperator = kind
+        correctionStatus = when (kind) {
+            CorrectionOperatorKind.BAND_ATTENUATE ->
+                "已选择指定频段衰减（实验室夹具默认 40–80 Hz，12 dB）。尚未生成预览。"
+            CorrectionOperatorKind.DE_CLICK ->
+                "已选择保守去咕嗒（邻域插值，不是专业去咔嗒）。尚未生成预览。"
+        }
+    }
+
+    fun setCorrectionRange(startMs: Long, endMs: Long) {
+        val duration = correctionSession?.dry?.durationMs ?: return
+        val start = startMs.coerceAtLeast(0L)
+        val end = endMs.coerceAtMost(duration)
+        if (end <= start) {
+            correctionStatus = "句段时间范围无效，未改音频。"
+            return
+        }
+        correctionStartMs = start
+        correctionEndMs = end
+        correctionStatus = "已标记句段 ${start}–${end} ms。这只是预览范围，舞台拖动不会改音频。"
+    }
+
+    fun previewCorrection() {
+        val session = correctionSession
+        if (session == null) {
+            correctionStatus = "请先加载实验室夹具。"
+            return
+        }
+        val request = when (correctionOperator) {
+            CorrectionOperatorKind.BAND_ATTENUATE -> CorrectionRequest(
+                startMs = correctionStartMs,
+                endMs = correctionEndMs,
+                operator = CorrectionOperatorKind.BAND_ATTENUATE,
+                band = LabCorrectionFixtures.INTERFERER_BAND,
+                attenuationDb = 12.0,
+            )
+            CorrectionOperatorKind.DE_CLICK -> CorrectionRequest(
+                startMs = correctionStartMs,
+                endMs = correctionEndMs,
+                operator = CorrectionOperatorKind.DE_CLICK,
+            )
+        }
+        val next = CorrectionWorkflow.preview(session, request)
+        correctionSession = next
+        val result = next.preview
+        correctionStatus = if (result == null) {
+            "预览未生成。"
+        } else {
+            CorrectionPreview.claimLine(result)
+        }
+    }
+
+    fun retainCorrection() {
+        val session = correctionSession ?: return
+        val next = CorrectionWorkflow.retain(session)
+        correctionSession = next
+        correctionStatus = CorrectionText.beforeAfterLine(next)
+    }
+
+    fun discardCorrection() {
+        val session = correctionSession ?: return
+        correctionSession = CorrectionWorkflow.discard(session)
+        correctionStatus = "已撤销预览和保留的修前/修后对照。${CorrectionText.SOURCE_NOTE}"
+    }
+
+    fun requestCorrectionListen(side: CorrectionListenSide) {
+        if (!CorrectionModeGate.correctionVisible(mode)) {
+            correctionStatus = CorrectionText.PRACTICE_HIDES_CORRECTION
+            return
+        }
+        val session = correctionSession
+        if (session == null) {
+            correctionStatus = "请先加载实验室夹具。"
+            return
+        }
+        val clip = when (side) {
+            CorrectionListenSide.DRY -> session.beforeAfter()?.first ?: session.dry
+            CorrectionListenSide.WET -> session.beforeAfter()?.second ?: session.preview?.wet
+        }
+        if (clip == null) {
+            correctionStatus = "还没有可试听的湿声。请先生成预览。"
+            return
+        }
+        demoPausedForPractice = true
+        correctionListenSeq += 1
+        correctionListenRequest = CorrectionListenRequest(
+            id = correctionListenSeq,
+            clip = clip,
+            side = side,
+        )
+        correctionStatus = "正在试听${clip.label}。${CorrectionText.SOURCE_NOTE} ${CorrectionText.DRAG_IS_VIEW_ONLY}"
+    }
+
+    fun onCorrectionListenFinished() {
+        playing = false
+        val side = correctionListenRequest?.side
+        correctionStatus = when (side) {
+            CorrectionListenSide.DRY -> "已听完修前（干声）。${CorrectionText.SOURCE_NOTE}"
+            CorrectionListenSide.WET -> "已听完修后预览（保守处理，不是已修好）。${CorrectionText.SOURCE_NOTE}"
+            null -> correctionStatus
+        }
+    }
+
+    fun onCorrectionListenCancelled() {
+        playing = false
+        correctionStatus = "试听被打断。${CorrectionText.SOURCE_NOTE}"
+    }
 }
+
+data class CorrectionListenRequest(
+    val id: Long,
+    val clip: PcmClip,
+    val side: CorrectionListenSide,
+)
+
+enum class CorrectionListenSide { DRY, WET }
 
 data class PracticeSessionRequest(
     val id: Long,
