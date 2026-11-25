@@ -29,6 +29,8 @@ class SoundField {
 
     val root: Entity = Entity().apply { setName("SoundFieldRoot") }
 
+    private val overlay = OverlayTrack(root)
+
     private val wedges: List<ModelEntity>
     private val targetMarker: ModelEntity
     private val currentMarker: ModelEntity
@@ -248,6 +250,10 @@ class SoundField {
             entity.components[HoverEffectComponent::class.java] = HoverEffectComponent()
             runCatching { entity.createCollisionShapes(true) }
         }
+    }
+
+    fun applyOverlay(scene: com.spatialcoach.soundarchitecture.audio.OverlayScene) {
+        overlay.apply(scene)
     }
 
     private fun pitchY(midi: Double): Float = StageMapping.yFromMidi(midi)

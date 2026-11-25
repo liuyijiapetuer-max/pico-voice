@@ -131,6 +131,9 @@ fun CoachWindowContent() {
         Spacer(Modifier.height(16.dp))
         Text("${AnalysisBus.INPUT_LABEL}。${AnalysisBus.DEVICE_NOTE}。", color = WindowTheme.Ink, fontSize = 12.sp)
 
+        Spacer(Modifier.height(16.dp))
+        OverlayCoachSection()
+
         if (CorrectionModeGate.correctionVisible(AnalysisBus.mode)) {
             ProfessionalCorrectionPanel()
         }

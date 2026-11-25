@@ -9,6 +9,7 @@ class SoundFieldSystem : System() {
     override fun update(context: SceneUpdateContext) {
         val runtime = SoundFieldRuntime.current ?: return
         runtime.field.apply(AnalysisBus.frame, AnalysisBus.mode, AnalysisBus.probe, AnalysisBus.followingHand)
+        runtime.field.applyOverlay(AnalysisBus.overlayScene)
     }
 }
 

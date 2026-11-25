@@ -233,4 +233,35 @@ object SoundMeshes {
         indices.add(base + 2)
         indices.add(base + 3)
     }
+
+    /** 边长为 1 的立方体，中心在原点，便于按中心点缩放叠合构件。 */
+    fun unitBox(): MeshModel {
+        val positions = ArrayList<Vector3>()
+        val normals = ArrayList<Vector3>()
+        val colors = ArrayList<Color4>()
+        val uvs = ArrayList<Vector2>()
+        val indices = ArrayList<Int>()
+        val white = Color4(1f, 1f, 1f, 1f)
+        val h = 0.5f
+        val faces = listOf(
+            Triple(Vector3(1f, 0f, 0f), Vector3(0f, h, 0f), Vector3(0f, 0f, h)),
+            Triple(Vector3(-1f, 0f, 0f), Vector3(0f, h, 0f), Vector3(0f, 0f, -h)),
+            Triple(Vector3(0f, 1f, 0f), Vector3(h, 0f, 0f), Vector3(0f, 0f, h)),
+            Triple(Vector3(0f, -1f, 0f), Vector3(h, 0f, 0f), Vector3(0f, 0f, -h)),
+            Triple(Vector3(0f, 0f, 1f), Vector3(h, 0f, 0f), Vector3(0f, h, 0f)),
+            Triple(Vector3(0f, 0f, -1f), Vector3(-h, 0f, 0f), Vector3(0f, h, 0f)),
+        )
+        for ((n, u, v) in faces) {
+            val c = Vector3(n.x * h, n.y * h, n.z * h)
+            addQuad(positions, normals, colors, uvs, indices, c, u, v, n, white)
+        }
+        return MeshModel(
+            positions = positions,
+            triangleIndices = indices,
+            normals = normals,
+            uv0 = uvs,
+            colors = colors,
+        )
+    }
+
 }

@@ -53,6 +53,9 @@ object AnalysisBus {
     var lastDemoAlignment by mutableStateOf<TakeAlignment?>(null)
         private set
 
+    var previousDemoAlignment by mutableStateOf<TakeAlignment?>(null)
+        private set
+
     var comparison by mutableStateOf<TakeComparison?>(null)
         private set
 
@@ -74,6 +77,20 @@ object AnalysisBus {
     var correctionListenRequest by mutableStateOf<CorrectionListenRequest?>(null)
         private set
 
+    var overlayScene by mutableStateOf(SpatialOverlay.layout())
+        private set
+
+    var overlayView by mutableStateOf(OverlayViewKind.PERSPECTIVE)
+        private set
+
+    var overlayStatus by mutableStateOf(
+        "参考轨道已按 A4–C5–G4–E4 摆出白线框。${EvaluationPolicy.PRERECORDED_BANNER}。${EvaluationPolicy.UNANCHORED_PLACEMENT}",
+    )
+        private set
+
+    var overlayAuditionRequest by mutableStateOf<OverlayAuditionRequest?>(null)
+        private set
+
     /**
      * 用户导入发布的唯一状态门。所有写槽必须经过 [beginUserImport] / [publishUserImport]，
      * 与 [UserImportCoordinatorTest] 覆盖的同一套令牌规则。
@@ -82,10 +99,17 @@ object AnalysisBus {
 
     private var requestSeq = 0L
     private var correctionListenSeq = 0L
+    private var overlayAuditionSeq = 0L
     private val importJobs = HashMap<ImportSlot, Job>()
 
     val practiceCue: PracticeCue
         get() = PracticeCoach.cue(frame)
+
+    val inputBanner: String
+        get() = overlayScene.sourceBanner
+
+    val evaluationScopeLine: String
+        get() = overlayScene.scopeLine
 
     fun toggleMode() {
         mode = if (mode == ViewMode.PROFESSIONAL) ViewMode.PRACTICE else ViewMode.PROFESSIONAL
@@ -102,6 +126,10 @@ object AnalysisBus {
     fun updateProbe(next: InteractionProbe?, following: Boolean) {
         probe = next
         followingHand = following
+        val overlayId = next?.overlayId
+        if (next?.kind == InteractionProbe.Kind.OVERLAY && overlayId != null) {
+            selectOverlay(overlayId)
+        }
     }
 
     fun clearFollow() {
@@ -111,7 +139,7 @@ object AnalysisBus {
     fun requestDemoPlay(rendition: PracticeFragments.Rendition) {
         invalidateInFlightImports("正在播放${rendition.label}。在途导入已失效，已成功的用户文件未改写成示范。")
         requestSeq += 1
-        practiceStatus = "正在播放${rendition.label}。这是内置合成示范，不会记为用户第一遍或重奏。"
+        practiceStatus = "正在播放${rendition.label}。这是内置合成示范，不会记为用户第一遍或重奏。${EvaluationPolicy.PRERECORDED_BANNER}。"
         demoPausedForPractice = true
         practiceRequest = PracticeSessionRequest(
             id = requestSeq,
@@ -145,10 +173,17 @@ object AnalysisBus {
             source = InputSource.FILE_SYNTHETIC,
             sourceName = rendition.label,
         )
-        lastDemoAlignment = TakeComparator.alignWithProcessedReference(take)
+        val aligned = TakeComparator.alignWithProcessedReference(take)
+        if (rendition == PracticeFragments.Rendition.RETAKE && lastDemoAlignment != null) {
+            previousDemoAlignment = lastDemoAlignment
+        } else if (rendition == PracticeFragments.Rendition.FIRST_TAKE || rendition == PracticeFragments.Rendition.MISSING_TAKE) {
+            previousDemoAlignment = null
+        }
+        lastDemoAlignment = aligned
         practiceStatus =
-            "已播放${rendition.label}（${InputSource.FILE_SYNTHETIC.label}）。未写入用户第一遍或重奏。稳定音 ${events.count { it.stable }} 个。"
+            "已播放${rendition.label}（${InputSource.FILE_SYNTHETIC.label}）。未写入用户第一遍或重奏。稳定音 ${events.count { it.stable }} 个。${EvaluationPolicy.PRERECORDED_BANNER}。"
         playing = false
+        rebuildOverlay()
     }
 
     fun setPracticeReferenceConfirmed(confirmed: Boolean) {
@@ -180,7 +215,7 @@ object AnalysisBus {
     }
 
     fun onImportJobCancelled(token: ImportToken) {
-        userImports.ignoreStale(token, "导入已取消。该槽没有恢复旧的成功结果，也没有回退到合成示范。")
+        userImports.ignoreStale(token, "导入已取消或已失效。该槽没有恢复旧的成功结果，也没有回退到合成示范。")
         syncImportState()
     }
 
@@ -193,7 +228,7 @@ object AnalysisBus {
 
     fun failImport(reason: String) {
         // 尚未拿到令牌的预检失败（未确认、未选文件等）不改写已有槽位。
-        practiceStatus = "导入失败：$reason 未改写已有的第一遍或重奏，也没有回退到合成示范。"
+        practiceStatus = EvaluationPolicy.importFailureMessage(reason)
     }
 
     fun onImportCancelled() {
@@ -205,6 +240,101 @@ object AnalysisBus {
         syncImportState()
     }
 
+    fun cycleOverlayView() {
+        overlayView = SpatialOverlay.cycleView(overlayView)
+        rebuildOverlay()
+        overlayStatus = "已切换到${SpatialOverlay.viewLabel(overlayView)}。这是轨道根节点的正交摆放，不是已验证的真机锚定。"
+    }
+
+    fun selectOverlay(memberId: String?) {
+        overlayScene = overlayScene.copy(selectedId = memberId)
+        val readout = SpatialOverlay.selectionReadout(overlayScene)
+        overlayStatus = when {
+            readout != null -> readout
+            memberId == null -> "未选中构件。音分或毫秒只在选中后展开。"
+            else -> "未找到该构件。"
+        }
+        if (readout != null) {
+            probe = InteractionProbe(
+                kind = InteractionProbe.Kind.OVERLAY,
+                overlayId = memberId,
+                overlayReadout = readout,
+            )
+        }
+    }
+
+    fun requestOverlayAudition(side: OverlayAuditionSide) {
+        val plan = SpatialOverlay.auditionPlan(overlayScene, side)
+        val clip = plan.clip
+        if (!plan.available || clip == null) {
+            overlayStatus = plan.reason ?: "无法试听。"
+            return
+        }
+        demoPausedForPractice = true
+        overlayAuditionSeq += 1
+        overlayAuditionRequest = OverlayAuditionRequest(
+            id = overlayAuditionSeq,
+            clip = clip,
+            side = side,
+            banner = plan.banner,
+        )
+        overlayStatus = "正在试听${clip.label}。${plan.banner}"
+    }
+
+    fun onOverlayAuditionFinished() {
+        playing = false
+        val side = overlayAuditionRequest?.side
+        val banner = overlayAuditionRequest?.banner ?: overlayScene.sourceBanner
+        overlayStatus = when (side) {
+            OverlayAuditionSide.REFERENCE -> "已听完参考片段。$banner"
+            OverlayAuditionSide.PERFORMANCE -> "已听完实际对照片段。$banner"
+            null -> overlayStatus
+        }
+    }
+
+    fun onOverlayAuditionCancelled() {
+        playing = false
+        overlayStatus = "试听被打断。${overlayScene.sourceBanner}"
+    }
+
+    fun reportMicPermissionDenied() {
+        errorMessage = EvaluationPolicy.PERMISSION_DENIED
+        overlayStatus = EvaluationPolicy.PERMISSION_DENIED
+    }
+
+    fun rebuildOverlay() {
+        val userCurrent = lastAlignment
+        val userPrevious = when {
+            comparison?.takeA != null && userCurrent != null && comparison?.takeB === userCurrent -> comparison?.takeA
+            takeRetake != null && takeFirst != null && userCurrent?.take === takeRetake ->
+                TakeComparator.alignWithProcessedReference(takeFirst!!)
+            else -> null
+        }
+        overlayScene = if (userCurrent != null) {
+            SpatialOverlay.layout(
+                reference = PracticeFragments.REFERENCE_V1,
+                current = userCurrent,
+                previous = userPrevious,
+                source = userCurrent.take.source,
+                view = overlayView,
+                selectedId = overlayScene.selectedId,
+            )
+        } else {
+            SpatialOverlay.layout(
+                reference = PracticeFragments.REFERENCE_V1,
+                current = lastDemoAlignment,
+                previous = previousDemoAlignment,
+                source = lastDemoAlignment?.take?.source ?: InputSource.FILE_SYNTHETIC,
+                view = overlayView,
+                selectedId = overlayScene.selectedId,
+            )
+        }
+        if (overlayScene.selectedId != null) {
+            val readout = SpatialOverlay.selectionReadout(overlayScene)
+            if (readout != null) overlayStatus = readout
+        }
+    }
+
     private fun syncImportState() {
         val s = userImports.state
         takeFirst = s.first
@@ -212,6 +342,7 @@ object AnalysisBus {
         lastAlignment = s.lastAlignment
         comparison = s.comparison
         practiceStatus = s.status
+        rebuildOverlay()
     }
 
     fun loadLabCorrectionHum() {
@@ -341,6 +472,13 @@ object AnalysisBus {
         correctionStatus = "试听被打断。${CorrectionText.SOURCE_NOTE}"
     }
 }
+
+data class OverlayAuditionRequest(
+    val id: Long,
+    val clip: PcmClip,
+    val side: OverlayAuditionSide,
+    val banner: String,
+)
 
 data class CorrectionListenRequest(
     val id: Long,

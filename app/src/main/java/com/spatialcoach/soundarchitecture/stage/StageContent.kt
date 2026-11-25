@@ -1,8 +1,10 @@
 package com.spatialcoach.soundarchitecture.stage
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -30,13 +32,17 @@ import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.CorrectionClipPlayer
 import com.spatialcoach.soundarchitecture.audio.CorrectionModeGate
 import com.spatialcoach.soundarchitecture.audio.CorrectionText
+import com.spatialcoach.soundarchitecture.audio.EvaluationPolicy
 import com.spatialcoach.soundarchitecture.audio.FileDemoPlayer
+import com.spatialcoach.soundarchitecture.audio.OverlayAuditionSide
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionPlayer
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionRequest
+import com.spatialcoach.soundarchitecture.audio.SpatialOverlay
 import com.spatialcoach.soundarchitecture.audio.StageInteraction
 import com.spatialcoach.soundarchitecture.audio.StageMapping
 import com.spatialcoach.soundarchitecture.audio.ViewMode
 import com.spatialcoach.soundarchitecture.ui.ModeToggle
+import com.spatialcoach.soundarchitecture.ui.WindowTheme
 import com.spatialcoach.soundarchitecture.ui.WorkspaceWindows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -63,6 +69,11 @@ fun StageContent() {
             AnalysisBus.publish(frame)
         }
     }
+    val overlayPlayer = remember {
+        CorrectionClipPlayer(context) { frame ->
+            AnalysisBus.publish(frame)
+        }
+    }
     val field = remember { SoundField() }
 
     LaunchedEffect(Unit) {
@@ -84,6 +95,7 @@ fun StageContent() {
         when (request.action) {
             PracticeSessionRequest.Action.PLAY -> {
                 val rendition = request.rendition ?: return@LaunchedEffect
+                overlayPlayer.stop()
                 correctionPlayer.stop()
                 player.stop()
                 AnalysisBus.markPlaying(true)
@@ -97,6 +109,7 @@ fun StageContent() {
                 }
             }
             PracticeSessionRequest.Action.RESUME_DEMO -> {
+                overlayPlayer.stop()
                 correctionPlayer.stop()
                 practicePlayer.stop()
                 player.start()
@@ -108,6 +121,7 @@ fun StageContent() {
     val correctionListen = AnalysisBus.correctionListenRequest
     LaunchedEffect(correctionListen?.id) {
         val request = correctionListen ?: return@LaunchedEffect
+        overlayPlayer.stop()
         practicePlayer.stop()
         player.stop()
         AnalysisBus.markPlaying(true)
@@ -118,6 +132,23 @@ fun StageContent() {
             AnalysisBus.onCorrectionListenFinished()
         } else {
             AnalysisBus.onCorrectionListenCancelled()
+        }
+    }
+
+    val overlayListen = AnalysisBus.overlayAuditionRequest
+    LaunchedEffect(overlayListen?.id) {
+        val request = overlayListen ?: return@LaunchedEffect
+        correctionPlayer.stop()
+        practicePlayer.stop()
+        player.stop()
+        AnalysisBus.markPlaying(true)
+        val completed = withContext(Dispatchers.IO) {
+            overlayPlayer.play(request.clip)
+        }
+        if (completed) {
+            AnalysisBus.onOverlayAuditionFinished()
+        } else {
+            AnalysisBus.onOverlayAuditionCancelled()
         }
     }
 
@@ -137,6 +168,7 @@ fun StageContent() {
         onDispose {
             unregisterSystem<SoundFieldSystem>()
             SoundFieldRuntime.uninstall()
+            overlayPlayer.stop()
             correctionPlayer.stop()
             practicePlayer.stop()
             player.stop()
@@ -161,7 +193,9 @@ fun StageContent() {
                             context,
                             TargetEntity.any { entity ->
                                 val name = entity.getName() ?: return@any false
-                                StageMapping.isFanEntity(name) || StageMapping.isRulerEntity(name)
+                                StageMapping.isFanEntity(name) ||
+                                    StageMapping.isRulerEntity(name) ||
+                                    StageMapping.isOverlayEntity(name)
                             },
                         ) { infos ->
                             val hit = infos.lastOrNull { it.targetedEntity != null } ?: infos.lastOrNull()
@@ -181,6 +215,7 @@ fun StageContent() {
                                 y = hit.y,
                                 pressed = pressed,
                                 frame = AnalysisBus.frame,
+                                overlay = AnalysisBus.overlayScene,
                             )
                             if (result == null) {
                                 if (!pressed) AnalysisBus.clearFollow()
@@ -204,50 +239,95 @@ private fun StageHud(modifier: Modifier = Modifier) {
     val mode = AnalysisBus.mode
     val frame = AnalysisBus.frame
     val playing = AnalysisBus.playing
+    val selected = AnalysisBus.overlayScene.selected
     Column(
         modifier
             .padding(20.dp)
             .background(Color(0xCC0B0E14))
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Text("声之建筑", color = Color(0xFFE8C48A), fontSize = 16.sp)
-        val cents = frame.cents
-        val pitchHz = frame.pitchHz
-        val probe = AnalysisBus.probe
-        val liveReadout = if (mode == ViewMode.PROFESSIONAL && frame.noteName != null && pitchHz != null && cents != null) {
-            "${frame.noteName}  ${"%.1f".format(pitchHz)} Hz  ${"%.0f".format(cents)} 音分"
+        Text("声之建筑", color = WindowTheme.Champagne, fontSize = 16.sp)
+        Text(
+            AnalysisBus.inputBanner,
+            color = WindowTheme.Champagne,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        if (selected != null) {
+            val readout = SpatialOverlay.selectionReadout(AnalysisBus.overlayScene)
+            if (readout != null) {
+                Text(readout, color = WindowTheme.CyanGlass, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+            }
         } else {
-            AnalysisBus.practiceCue.sentence
+            val cents = frame.cents
+            val pitchHz = frame.pitchHz
+            val liveReadout = if (mode == ViewMode.PROFESSIONAL && frame.noteName != null && pitchHz != null && cents != null) {
+                "${frame.noteName}  ${"%.1f".format(pitchHz)} Hz  ${"%.0f".format(cents)} 音分"
+            } else {
+                AnalysisBus.practiceCue.sentence
+            }
+            Text(liveReadout, color = WindowTheme.AmberDim, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
         }
-        Text(liveReadout, color = Color(0xFFB8935C), fontSize = 14.sp)
-        if (probe != null) {
+        val probe = AnalysisBus.probe
+        if (probe != null && probe.kind != com.spatialcoach.soundarchitecture.audio.InteractionProbe.Kind.OVERLAY) {
             Text(
                 probe.readout(mode),
-                color = Color(0xFFE8C48A),
+                color = WindowTheme.Champagne,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp),
             )
             if (AnalysisBus.followingHand) {
-                Text("标记正在跟手，松开后回到当前音高。这是查看，不是修音。", color = Color(0xFF8A97AD), fontSize = 11.sp)
+                Text("标记正在跟手，松开后回到当前音高。这是查看，不是修音。手势尚未通过稳定性测试。", color = WindowTheme.Ink, fontSize = 11.sp)
             }
         }
-        ModeToggle(Modifier.padding(top = 8.dp), color = Color(0xFFE8C48A))
+        Row(Modifier.padding(top = 8.dp)) {
+            ModeToggle(color = WindowTheme.Champagne)
+        }
+        Text(
+            "一键正交视图 · ${SpatialOverlay.viewLabel(AnalysisBus.overlayScene.view)}",
+            color = WindowTheme.CyanGlass,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .clickable { AnalysisBus.cycleOverlayView() }
+                .padding(vertical = 4.dp),
+        )
+        if (selected != null) {
+            Text(
+                "试听参考（A）",
+                color = WindowTheme.Champagne,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .clickable { AnalysisBus.requestOverlayAudition(OverlayAuditionSide.REFERENCE) }
+                    .padding(vertical = 4.dp),
+            )
+            Text(
+                "试听实际（B）",
+                color = WindowTheme.Champagne,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .clickable { AnalysisBus.requestOverlayAudition(OverlayAuditionSide.PERFORMANCE) }
+                    .padding(vertical = 4.dp),
+            )
+        }
         Text(
             "${if (playing) "正在回放" else "已暂停"}  ·  ${AnalysisBus.INPUT_LABEL}  ·  ${AnalysisBus.DEVICE_NOTE}",
-            color = Color(0xFF8A97AD),
+            color = WindowTheme.Ink,
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp),
         )
+        Text(EvaluationPolicy.UNANCHORED_PLACEMENT, color = WindowTheme.Ink, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        Text(EvaluationPolicy.RAY_DEFAULT, color = WindowTheme.Ink, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
         if (CorrectionModeGate.correctionVisible(mode) && AnalysisBus.correctionSession != null) {
             Text(
                 AnalysisBus.correctionStatus,
-                color = Color(0xFFE8C48A),
+                color = WindowTheme.Champagne,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
                 CorrectionText.DRAG_IS_VIEW_ONLY + " " + CorrectionText.NOT_PERFORMANCE,
-                color = Color(0xFF8A97AD),
+                color = WindowTheme.Ink,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 2.dp),
             )
@@ -255,7 +335,7 @@ private fun StageHud(modifier: Modifier = Modifier) {
         if (AnalysisBus.demoPausedForPractice) {
             Text(
                 "演示回放已暂停，可用第三窗「恢复舞台演示回放」。${AnalysisBus.REVIEW_NOTE}",
-                color = Color(0xFF8A97AD),
+                color = WindowTheme.Ink,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 4.dp),
             )

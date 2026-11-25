@@ -30,6 +30,7 @@ object PracticeFragments {
         REFERENCE("reference", "内置参考示范（对准、准点）"),
         FIRST_TAKE("first", "内置偏差示范（不是用户第一遍）"),
         RETAKE("retake", "内置改善示范（不是用户重奏）"),
+        MISSING_TAKE("missing", "内置漏音示范（不是用户演奏）"),
     }
 
     data class SynthNote(
@@ -53,6 +54,12 @@ object PracticeFragments {
             TARGETS_V1[1].toSynth(cents = 0.0, delayMs = 0L),
             TARGETS_V1[2].toSynth(cents = 0.0, delayMs = 12L),
             TARGETS_V1[3].toSynth(cents = 0.0, delayMs = 0L),
+        )
+        Rendition.MISSING_TAKE -> listOf(
+            TARGETS_V1[0].toSynth(cents = 0.0, delayMs = 0L),
+            TARGETS_V1[1].toSynth(cents = 0.0, delayMs = 0L),
+            TARGETS_V1[2].toSynth(cents = 0.0, delayMs = 0L),
+            // 第4拍漏音，不把后面的时间轴拉伸去填满空缺。
         )
     }
 

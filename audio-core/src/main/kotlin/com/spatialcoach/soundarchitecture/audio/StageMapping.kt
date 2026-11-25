@@ -6,6 +6,7 @@ import kotlin.math.pow
  * 舞台扇面与音高尺的几何映射。纯计算，便于单测，不依赖 Spatial 运行时。
  * 与 SoundField 的摆放保持同一套常数：尺在前方 z=-1.25，竖直方向 48..84 MIDI，
  * 左右偏移 ±0.35 对应 ±50 音分（右偏高、左偏低）。
+ * 声音轨道叠合的时间轴与默认宽度见 [SpatialOverlay]，不把演奏时值拉伸到参考长度。
  */
 object StageMapping {
     const val BANDS = 36
@@ -82,6 +83,8 @@ object StageMapping {
             name == "SaPitchError"
 
     fun isFanEntity(name: String): Boolean = name.startsWith("SaBand_")
+
+    fun isOverlayEntity(name: String): Boolean = SpatialOverlay.isOverlayEntity(name)
 
     fun fanIndex(name: String): Int? =
         name.removePrefix("SaBand_").toIntOrNull()?.takeIf { it in 0 until BANDS }

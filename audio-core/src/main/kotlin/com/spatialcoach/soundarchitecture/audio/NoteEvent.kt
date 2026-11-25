@@ -29,12 +29,16 @@ data class NoteEvent(
 enum class InputSource {
     FILE_SYNTHETIC,
     USER_WAV_FILE,
+    MIDI_EVENTS,
+    MICROPHONE_MONO,
     ;
 
     val label: String
         get() = when (this) {
             FILE_SYNTHETIC -> "内置合成示范（不是用户演奏）"
             USER_WAV_FILE -> "录音文件分析（不是实时采集）"
+            MIDI_EVENTS -> "MIDI 事件（只核对准键与时间，不评声学音准）"
+            MICROPHONE_MONO -> "麦克风单音采集（仅在实际采集时使用）"
         }
 }
 
