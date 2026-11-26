@@ -82,6 +82,10 @@ $cli='G:\minimaxworkspace\pico-spatial-2026\tools\node_modules\.bin\pico-cli.cmd
 
 历史官方通过仍以已推送的 M2 提交 [`8ba442c148c2b7c3b6d9992bca212347a9e949a3`](https://github.com/liuyijiapetuer-max/pico-voice/commit/8ba442c148c2b7c3b6d9992bca212347a9e949a3) 与 [stability/report-20261112-085904.md](stability/report-20261112-085904.md) 为准（emulator-5554，文件回放，不是头显，也不是继承任何旧通过）。当时对账的 SHA256 是 `287009CBC2764E2F2C7E37E2019C0BC8893549F68DE032C85E71DC49356E5D1A`，完整表格见 [reports/m2-commit-apk.md](reports/m2-commit-apk.md)。
 
-**当前磁盘上的** `app/build/outputs/apk/debug/app-debug.apk` 已不是 8ba442c 那一包：字节数仍为 31,688,250，mtime 2026-11-17 00:26:57（Asia/Shanghai），SHA256 为 `EF774371B45129596F12F134CB196CBA811E1651235BDDE94D8159790D50AE3D`，对应 ee1ab40。请勿再跑 `assembleDebug` 覆盖它。
+**当前磁盘上的** `app/build/outputs/apk/debug/app-debug.apk` 既不是 8ba442c 那一包，也不是 ee1ab40 那一包：2026-11-17 12:55:54（Asia/Shanghai）那次 `assembleDebug` 已把它换成 SourceCommit `a8ba1365c72d10b4b6ec80a033ee16e44cb49688`（含父提交 `4a79fed`）对应的包，字节数 31,914,722，SHA256 为 `582A647D21DD49527554CFD4FE789EB0099F49DA5B1C1C9C93410F1EA36B070C`，完整对账见 [reports/practice-review-apk-20261117-1255/README.md](reports/practice-review-apk-20261117-1255/README.md)（2026-11-26 实读复核字节数、SHA256、mtime 三项均与该对账一致）。
+
+- **这个磁盘包不含 V3.0 首期增量**：V3 提交是 `d304342`（2026-11-25 20:50），晚于本包。交卷必须重新打包并重做 Commit ↔ APK 对账，不能拿它当交卷包。
+- ee1ab40 旧包仍有独立副本，未被覆盖：`reports/practice-review-apk-20261117-1255/app-debug-ee1ab40.apk` 与 `reports/m2-ee1ab40-emulator-20261117-0028/apk/app-debug-ee1ab40.apk`（31,688,250 B，SHA256 `EF774371B45129596F12F134CB196CBA811E1651235BDDE94D8159790D50AE3D`）。重打包前先确认这两份副本是否还要留。
+- 这些 APK 副本都是 `.gitignore` 忽略项（`*.apk`），仓库里没有任何二进制。
 
 本轮 V3.0 首期增量只有新源码与单测/编译证据，**未打新 APK，未跑新的 30 分钟稳定性，未做用户对照或真机录屏**，不能继承上述历史通过结论，也不能声称已完成 W4。
