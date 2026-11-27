@@ -73,6 +73,12 @@ object UserTakeFactory {
         reference: PracticeReference,
     ): PerformanceTake {
         val report = PassageAnalyzer.analyze(wav.samples, wav.sampleRate)
+        val audio = PcmClip(
+            samples = wav.samples,
+            sampleRate = wav.sampleRate,
+            label = "用户导入原音频（$sourceName，不是实时采集）",
+            sourceName = sourceName,
+        )
         return PracticeFragments.buildTake(
             takeId = takeId,
             events = report.events,
@@ -85,6 +91,8 @@ object UserTakeFactory {
             timeWindowStartMs = 0L,
             timeWindowEndMs = wav.durationMs,
             segmentation = report.diagnostics,
+            audio = audio,
         )
     }
 }
+

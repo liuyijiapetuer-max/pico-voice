@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-27T01:33:21.644Z" hostname="SPACE" time="0.733">
+  <properties/>
+  <testcase name="legatoSamePitchReattackIsIndeterminate" classname="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" time="0.078"/>
+  <testcase name="shortGapSamePitchIsIndeterminateAndDoesNotPublishCounts" classname="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" time="0.064"/>
+  <testcase name="spacedSamePitchRepeatsAreDeterminateWithStrictTiming" classname="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" time="0.08"/>
+  <testcase name="glideDoesNotPublishDeterminateMissingExtraOrImprovement" classname="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" time="0.409"/>
+  <testcase name="officialDistinctPitchesStillGiveDeterminateMissingCounts" classname="com.spatialcoach.soundarchitecture.audio.EventCountabilityTest" time="0.101"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

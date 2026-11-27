@@ -34,6 +34,13 @@ import com.spatialcoach.soundarchitecture.audio.CorrectionModeGate
 import com.spatialcoach.soundarchitecture.audio.CorrectionText
 import com.spatialcoach.soundarchitecture.audio.EvaluationPolicy
 import com.spatialcoach.soundarchitecture.audio.FileDemoPlayer
+import com.spatialcoach.soundarchitecture.audio.LiveCaptureRequest
+import com.spatialcoach.soundarchitecture.audio.LiveCaptureResult
+import com.spatialcoach.soundarchitecture.audio.LiveInputKind
+import com.spatialcoach.soundarchitecture.audio.MidiDeviceSource
+import com.spatialcoach.soundarchitecture.audio.MidiTakeFactory
+import com.spatialcoach.soundarchitecture.audio.MicrophoneTakeFactory
+import com.spatialcoach.soundarchitecture.audio.MonoMicrophoneCapture
 import com.spatialcoach.soundarchitecture.audio.OverlayAuditionSide
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionPlayer
 import com.spatialcoach.soundarchitecture.audio.PracticeSessionRequest
@@ -73,6 +80,18 @@ fun StageContent() {
         CorrectionClipPlayer(context) { frame ->
             AnalysisBus.publish(frame)
         }
+    }
+    val micCapture = remember {
+        MonoMicrophoneCapture(
+            onFrame = { frame -> AnalysisBus.publish(frame) },
+            onAutoStop = { AnalysisBus.requestStopLiveCapture() },
+        )
+    }
+    val midiCapture = remember {
+        MidiDeviceSource(
+            context = context,
+            onAutoStop = { AnalysisBus.requestStopLiveCapture() },
+        )
     }
     val field = remember { SoundField() }
 
@@ -152,6 +171,66 @@ fun StageContent() {
         }
     }
 
+    val liveRequest = AnalysisBus.liveCaptureRequest
+    LaunchedEffect(liveRequest?.id) {
+        val request = liveRequest ?: return@LaunchedEffect
+        when (request.action) {
+            LiveCaptureRequest.Action.START -> {
+                overlayPlayer.stop()
+                correctionPlayer.stop()
+                practicePlayer.stop()
+                player.stop()
+                AnalysisBus.markPlaying(false)
+                val error = withContext(Dispatchers.IO) {
+                    when (request.kind) {
+                        LiveInputKind.MICROPHONE_MONO -> micCapture.start()
+                        LiveInputKind.MIDI_EVENTS -> midiCapture.start()
+                        null -> EvaluationPolicy.DEVICE_MISSING
+                    }
+                }
+                if (error != null) {
+                    AnalysisBus.onLiveCaptureFailed(error)
+                } else {
+                    AnalysisBus.onLiveCaptureStarted()
+                }
+            }
+            LiveCaptureRequest.Action.STOP -> {
+                val kind = request.kind
+                val confirmed = AnalysisBus.userImports.state.referenceConfirmed
+                val result = withContext(Dispatchers.IO) {
+                    when (kind) {
+                        LiveInputKind.MICROPHONE_MONO -> {
+                            val recording = micCapture.stop()
+                            if (recording == null) {
+                                LiveCaptureResult.Failed(EvaluationPolicy.MIC_NO_AUDIO)
+                            } else {
+                                MicrophoneTakeFactory.fromPcm(
+                                    samples = recording.samples,
+                                    sampleRate = recording.sampleRate,
+                                    takeId = AnalysisBus.nextLiveTakeId("mic"),
+                                    sourceName = "android-audiorecord",
+                                    referenceConfirmed = confirmed,
+                                )
+                            }
+                        }
+                        LiveInputKind.MIDI_EVENTS -> {
+                            val (messages, endMs) = midiCapture.stop()
+                            MidiTakeFactory.fromMessages(
+                                messages = messages,
+                                takeId = AnalysisBus.nextLiveTakeId("midi"),
+                                sourceName = "android-midi",
+                                referenceConfirmed = confirmed,
+                                sessionEndMs = endMs,
+                            )
+                        }
+                        null -> LiveCaptureResult.Failed(EvaluationPolicy.CAPTURE_CANCELLED)
+                    }
+                }
+                AnalysisBus.completeLiveCapture(result)
+            }
+        }
+    }
+
     // 副窗必须错开打开，后一扇才能锚到前一扇，否则会叠在一起。
     LaunchedEffect(Unit) {
         delay(1500)
@@ -172,6 +251,8 @@ fun StageContent() {
             correctionPlayer.stop()
             practicePlayer.stop()
             player.stop()
+            micCapture.stopAndDiscard()
+            midiCapture.stopAndDiscard()
             AnalysisBus.markPlaying(false)
         }
     }
@@ -311,7 +392,7 @@ private fun StageHud(modifier: Modifier = Modifier) {
             )
         }
         Text(
-            "${if (playing) "正在回放" else "已暂停"}  ·  ${AnalysisBus.INPUT_LABEL}  ·  ${AnalysisBus.DEVICE_NOTE}",
+            "${if (AnalysisBus.liveCapture.isRecording) "正在采集" else if (playing) "正在回放" else "已暂停"}  ·  ${AnalysisBus.currentInputLabel}  ·  ${AnalysisBus.currentDeviceNote}",
             color = WindowTheme.Ink,
             fontSize = 11.sp,
             modifier = Modifier.padding(top = 6.dp),
@@ -342,3 +423,4 @@ private fun StageHud(modifier: Modifier = Modifier) {
         }
     }
 }
+

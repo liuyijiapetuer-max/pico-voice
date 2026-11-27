@@ -93,6 +93,11 @@ data class PerformanceTake(
     val timeWindowStartMs: Long? = null,
     val timeWindowEndMs: Long? = null,
     val segmentation: SegmentationDiagnostics = SegmentationDiagnostics(),
+    /**
+     * 原始录音或采集波形，供「实际」试听切出原切片。没有波形时不得用合成音色冒充实际演奏。
+     * 内置示范与仅含 MIDI 事件的记录通常为 null。
+     */
+    val audio: PcmClip? = null,
 )
 
 data class TargetNote(
@@ -113,3 +118,4 @@ data class PracticeReference(
 ) {
     val hasPitchTargets: Boolean get() = targets.any { it.midi != null }
 }
+

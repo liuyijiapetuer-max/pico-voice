@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-27T01:33:22.380Z" hostname="SPACE" time="1.643">
+  <properties/>
+  <testcase name="determinateOfficialSuggestionsKeepExactFaultAndCountLines" classname="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" time="0.352"/>
+  <testcase name="retakeIndeterminateDoesNotAdviseDeterminateMissingOrImprovement" classname="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" time="0.44"/>
+  <testcase name="singleTakeIndeterminateSuggestionsAreExactAndHaveNoFaultInferences" classname="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" time="0.12"/>
+  <testcase name="firstIndeterminateDoesNotAdviseDeterminateMissingOrImprovement" classname="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" time="0.356"/>
+  <testcase name="bothIndeterminateDoesNotAdviseDeterminateMissingOrImprovement" classname="com.spatialcoach.soundarchitecture.audio.IndeterminateSuggestionTest" time="0.373"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

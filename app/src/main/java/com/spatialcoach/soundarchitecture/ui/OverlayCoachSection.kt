@@ -1,16 +1,24 @@
 package com.spatialcoach.soundarchitecture.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.pico.spatial.ui.design.Text
 import com.spatialcoach.soundarchitecture.audio.AnalysisBus
 import com.spatialcoach.soundarchitecture.audio.EvaluationPolicy
+import com.spatialcoach.soundarchitecture.audio.LiveInputKind
+import com.spatialcoach.soundarchitecture.audio.MidiDeviceSource
 import com.spatialcoach.soundarchitecture.audio.OverlayAuditionSide
 import com.spatialcoach.soundarchitecture.audio.PracticeFragments
 import com.spatialcoach.soundarchitecture.audio.SpatialOverlay
@@ -18,6 +26,20 @@ import com.spatialcoach.soundarchitecture.audio.SpatialOverlay
 /** 练习窗里的叠合/试听/正交控制。数值只在选中构件后展开，不另开悬浮面板。 */
 @Composable
 fun OverlayCoachSection() {
+    val context = LocalContext.current
+    val requestMicPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            AnalysisBus.requestStartLiveCapture(
+                kind = LiveInputKind.MICROPHONE_MONO,
+                permissionGranted = true,
+                deviceAvailable = true,
+            )
+        } else {
+            AnalysisBus.reportMicPermissionDenied()
+        }
+    }
     val scene = AnalysisBus.overlayScene
     Text("空间叠合", color = WindowTheme.CyanGlass, fontSize = 18.sp)
     Spacer(Modifier.height(6.dp))
@@ -54,6 +76,40 @@ fun OverlayCoachSection() {
     )
     Spacer(Modifier.height(8.dp))
     OverlayAction("播放内置漏音示范") { AnalysisBus.requestDemoPlay(PracticeFragments.Rendition.MISSING_TAKE) }
+    Spacer(Modifier.height(12.dp))
+    Text("实时输入（软件接线）", color = WindowTheme.CyanGlass, fontSize = 18.sp)
+    Spacer(Modifier.height(6.dp))
+    Text(EvaluationPolicy.SOFTWARE_WIRING_NOTE, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(4.dp))
+    Text(EvaluationPolicy.LIVE_CAPTURE_NOT_USER_SLOT, color = WindowTheme.Ink, fontSize = 12.sp)
+    Spacer(Modifier.height(4.dp))
+    Text(AnalysisBus.liveStatus, color = WindowTheme.Good, fontSize = 13.sp)
+    OverlayAction("开始麦克风单音采集") {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            AnalysisBus.requestStartLiveCapture(
+                kind = LiveInputKind.MICROPHONE_MONO,
+                permissionGranted = true,
+                deviceAvailable = true,
+            )
+        } else {
+            requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    OverlayAction("开始 MIDI 采集") {
+        val available = MidiDeviceSource(context).availableDevices().isNotEmpty()
+        if (!available) {
+            AnalysisBus.reportLiveDeviceMissing(LiveInputKind.MIDI_EVENTS)
+        } else {
+            AnalysisBus.requestStartLiveCapture(
+                kind = LiveInputKind.MIDI_EVENTS,
+                permissionGranted = true,
+                deviceAvailable = true,
+            )
+        }
+    }
+    OverlayAction("停止采集并分析") { AnalysisBus.requestStopLiveCapture() }
 }
 
 @Composable
@@ -67,3 +123,4 @@ private fun OverlayAction(label: String, onClick: () -> Unit) {
             .padding(vertical = 6.dp),
     )
 }
+

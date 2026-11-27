@@ -1,0 +1,39 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :audio-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :audio-core:processResources NO-SOURCE
+> Task :audio-core:processTestResources NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :audio-core:compileKotlin
+> Task :audio-core:compileJava NO-SOURCE
+> Task :audio-core:classes UP-TO-DATE
+> Task :audio-core:jar
+> Task :audio-core:compileTestKotlin
+> Task :audio-core:compileTestJava NO-SOURCE
+> Task :audio-core:testClasses UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+w: file:///G:/minimaxworkspace/pico-sonosphere/app/src/main/java/com/spatialcoach/soundarchitecture/audio/MidiDeviceSource.kt:41:21 'val devices: Array<(out) MidiDeviceInfo!>!' is deprecated. Deprecated in Java.
+
+> Task :audio-core:test
+
+BUILD SUCCESSFUL in 1m 2s
+20 actionable tasks: 9 executed, 11 up-to-date
+GRADLE_EXIT=0

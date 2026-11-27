@@ -7,7 +7,7 @@ import kotlinx.coroutines.Job
 
 /**
  * 主舞台和三扇副窗共享的一份分析状态。
- * 默认输入是文件回放，不能写成「已头显验证的实时拾音」。
+ * 默认输入是文件回放。用户可手动开始麦克风或 MIDI 采集，但不能写成「已头显验证的实时拾音」。
  */
 object AnalysisBus {
     const val INPUT_LABEL = "文件回放（合成音轨）"
@@ -91,6 +91,20 @@ object AnalysisBus {
     var overlayAuditionRequest by mutableStateOf<OverlayAuditionRequest?>(null)
         private set
 
+    val liveCapture = LiveCaptureCoordinator()
+
+    var liveCaptureRequest by mutableStateOf<LiveCaptureRequest?>(null)
+        private set
+
+    var liveStatus by mutableStateOf(liveCapture.state.status)
+        private set
+
+    var liveAlignment by mutableStateOf<TakeAlignment?>(null)
+        private set
+
+    var previousLiveAlignment by mutableStateOf<TakeAlignment?>(null)
+        private set
+
     /**
      * 用户导入发布的唯一状态门。所有写槽必须经过 [beginUserImport] / [publishUserImport]，
      * 与 [UserImportCoordinatorTest] 覆盖的同一套令牌规则。
@@ -100,7 +114,14 @@ object AnalysisBus {
     private var requestSeq = 0L
     private var correctionListenSeq = 0L
     private var overlayAuditionSeq = 0L
+    private var liveCaptureSeq = 0L
+    private var liveTakeSeq = 0L
     private val importJobs = HashMap<ImportSlot, Job>()
+
+    fun nextLiveTakeId(prefix: String): String {
+        liveTakeSeq += 1
+        return "$prefix-$liveTakeSeq"
+    }
 
     val practiceCue: PracticeCue
         get() = PracticeCoach.cue(frame)
@@ -110,6 +131,28 @@ object AnalysisBus {
 
     val evaluationScopeLine: String
         get() = overlayScene.scopeLine
+
+    val currentInputLabel: String
+        get() = when {
+            liveCapture.isRecording && liveCapture.state.kind == LiveInputKind.MICROPHONE_MONO ->
+                "麦克风单音采集（软件接线，不是头显验收）"
+            liveCapture.isRecording && liveCapture.state.kind == LiveInputKind.MIDI_EVENTS ->
+                "MIDI 事件采集（软件接线，只核对准键与时间）"
+            overlayScene.source == InputSource.MICROPHONE_MONO ->
+                InputSource.MICROPHONE_MONO.label
+            overlayScene.source == InputSource.MIDI_EVENTS ->
+                InputSource.MIDI_EVENTS.label
+            overlayScene.source == InputSource.USER_WAV_FILE ->
+                InputSource.USER_WAV_FILE.label
+            else -> INPUT_LABEL
+        }
+
+    val currentDeviceNote: String
+        get() = when {
+            liveCapture.isRecording || overlayScene.source == InputSource.MICROPHONE_MONO || overlayScene.source == InputSource.MIDI_EVENTS ->
+                EvaluationPolicy.SOFTWARE_WIRING_NOTE
+            else -> DEVICE_NOTE
+        }
 
     fun toggleMode() {
         mode = if (mode == ViewMode.PROFESSIONAL) ViewMode.PRACTICE else ViewMode.PROFESSIONAL
@@ -298,8 +341,96 @@ object AnalysisBus {
     }
 
     fun reportMicPermissionDenied() {
+        liveCapture.fail(LiveInputKind.MICROPHONE_MONO, EvaluationPolicy.PERMISSION_DENIED)
+        syncLiveState()
         errorMessage = EvaluationPolicy.PERMISSION_DENIED
         overlayStatus = EvaluationPolicy.PERMISSION_DENIED
+    }
+
+    fun reportLiveDeviceMissing(kind: LiveInputKind) {
+        liveCapture.fail(kind, EvaluationPolicy.DEVICE_MISSING)
+        syncLiveState()
+        errorMessage = EvaluationPolicy.DEVICE_MISSING
+        overlayStatus = EvaluationPolicy.DEVICE_MISSING
+    }
+
+    fun requestStartLiveCapture(kind: LiveInputKind, permissionGranted: Boolean, deviceAvailable: Boolean): Boolean {
+        if (!userImports.state.referenceConfirmed) {
+            val reason = UserTakeFactory.bindRejected(false, PracticeFragments.REFERENCE_V1)
+                ?: "未确认固定练习谱，已拒绝开始采集。"
+            liveCapture.fail(kind, reason)
+            syncLiveState()
+            overlayStatus = reason
+            practiceStatus = reason
+            errorMessage = reason
+            return false
+        }
+        if (!liveCapture.begin(kind, permissionGranted, deviceAvailable)) {
+            syncLiveState()
+            overlayStatus = liveCapture.state.status
+            errorMessage = liveCapture.state.lastFailure
+            return false
+        }
+        invalidateInFlightImports("正在开始实时采集。在途导入已失效，已成功的用户文件未改写。")
+        demoPausedForPractice = true
+        liveCaptureSeq += 1
+        liveCaptureRequest = LiveCaptureRequest(
+            id = liveCaptureSeq,
+            action = LiveCaptureRequest.Action.START,
+            kind = kind,
+        )
+        syncLiveState()
+        overlayStatus = liveCapture.state.status
+        return true
+    }
+
+    fun requestStopLiveCapture() {
+        if (!liveCapture.isRecording) {
+            syncLiveState()
+            return
+        }
+        liveCaptureSeq += 1
+        liveCaptureRequest = LiveCaptureRequest(
+            id = liveCaptureSeq,
+            action = LiveCaptureRequest.Action.STOP,
+            kind = liveCapture.state.kind,
+        )
+        syncLiveState()
+    }
+
+    fun onLiveCaptureStarted() {
+        markPlaying(false)
+        syncLiveState()
+        overlayStatus = liveCapture.state.status
+    }
+
+    fun completeLiveCapture(result: LiveCaptureResult) {
+        val accepted = liveCapture.complete(result)
+        if (accepted && result is LiveCaptureResult.Ok) {
+            previousLiveAlignment = liveAlignment
+            liveAlignment = TakeComparator.alignWithProcessedReference(result.take)
+        }
+        syncLiveState()
+        overlayStatus = liveCapture.state.status
+        practiceStatus = liveCapture.state.status
+        rebuildOverlay()
+    }
+
+    fun onLiveCaptureFailed(reason: String) {
+        val kind = liveCapture.state.kind
+        if (liveCapture.isRecording) {
+            liveCapture.fail(kind, reason)
+        } else if (liveCapture.state.phase != LiveCapturePhase.FAILED) {
+            liveCapture.fail(kind, reason)
+        }
+        syncLiveState()
+        errorMessage = reason
+        overlayStatus = reason
+        practiceStatus = reason
+    }
+
+    private fun syncLiveState() {
+        liveStatus = liveCapture.state.status
     }
 
     fun rebuildOverlay() {
@@ -316,6 +447,15 @@ object AnalysisBus {
                 current = userCurrent,
                 previous = userPrevious,
                 source = userCurrent.take.source,
+                view = overlayView,
+                selectedId = overlayScene.selectedId,
+            )
+        } else if (liveAlignment != null) {
+            SpatialOverlay.layout(
+                reference = PracticeFragments.REFERENCE_V1,
+                current = liveAlignment,
+                previous = previousLiveAlignment,
+                source = liveAlignment!!.take.source,
                 view = overlayView,
                 selectedId = overlayScene.selectedId,
             )
@@ -495,3 +635,12 @@ data class PracticeSessionRequest(
 ) {
     enum class Action { PLAY, RESUME_DEMO }
 }
+
+data class LiveCaptureRequest(
+    val id: Long,
+    val action: Action,
+    val kind: LiveInputKind? = null,
+) {
+    enum class Action { START, STOP }
+}
+

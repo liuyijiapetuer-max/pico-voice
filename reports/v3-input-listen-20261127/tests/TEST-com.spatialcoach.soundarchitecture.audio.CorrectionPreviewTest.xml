@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-27T01:33:21.565Z" hostname="SPACE" time="0.071">
+  <properties/>
+  <testcase name="retainCreatesBeforeAfterOnSameRangeAndDiscardClearsIt" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.014"/>
+  <testcase name="attenuatingEmptyBandIsNotSufficientEvidence" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.005"/>
+  <testcase name="bandAttenuateOnLabHumDropsTargetBandAndDoesNotClaimFixed" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.005"/>
+  <testcase name="deClickOnCleanToneIsNotSufficientEvidence" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.014"/>
+  <testcase name="deClickFloorMustNotPresent80AsMeasuredDrop" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.012"/>
+  <testcase name="unsupportedDeEssIsRejectedWithoutWetAudio" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.002"/>
+  <testcase name="deClickOnLabClicksDropsResidualAndDoesNotClaimFixed" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.007"/>
+  <testcase name="practiceModeHidesCorrectionAndDoesNotRelabelItAsPerformance" classname="com.spatialcoach.soundarchitecture.audio.CorrectionPreviewTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

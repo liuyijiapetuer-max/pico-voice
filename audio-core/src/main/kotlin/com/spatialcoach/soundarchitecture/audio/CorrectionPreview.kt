@@ -477,6 +477,31 @@ data class PcmClip(
 ) {
     val durationMs: Long
         get() = if (sampleRate <= 0) 0L else (samples.size * 1000L) / sampleRate
+
+    /**
+     * 从原波形切出 [startMs, endMs] 窗口，可加少量前后填充，不做时间拉伸，也不重新合成。
+     * 窗口完全落在范围外时返回 null。
+     */
+    fun sliceWindow(
+        startMs: Long,
+        endMs: Long,
+        padMs: Long = 40L,
+        label: String = this.label,
+        sourceName: String = this.sourceName,
+    ): PcmClip? {
+        if (sampleRate <= 0 || samples.isEmpty()) return null
+        val start = ((startMs - padMs).coerceAtLeast(0L) * sampleRate) / 1000L
+        val endExclusive = ((endMs + padMs).coerceAtLeast(0L) * sampleRate) / 1000L
+        val from = start.toInt().coerceIn(0, samples.size)
+        val to = endExclusive.toInt().coerceIn(0, samples.size)
+        if (to <= from) return null
+        return PcmClip(
+            samples = samples.copyOfRange(from, to),
+            sampleRate = sampleRate,
+            label = label,
+            sourceName = sourceName,
+        )
+    }
 }
 
 data class CorrectionEvidence(
@@ -577,3 +602,4 @@ internal class PeakingCut(
         return y0.toFloat()
     }
 }
+

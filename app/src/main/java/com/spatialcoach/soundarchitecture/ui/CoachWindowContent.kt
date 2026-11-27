@@ -129,7 +129,7 @@ fun CoachWindowContent() {
         Spacer(Modifier.height(20.dp))
         ModeToggle()
         Spacer(Modifier.height(16.dp))
-        Text("${AnalysisBus.INPUT_LABEL}。${AnalysisBus.DEVICE_NOTE}。", color = WindowTheme.Ink, fontSize = 12.sp)
+        Text("${AnalysisBus.currentInputLabel}。${AnalysisBus.currentDeviceNote}。", color = WindowTheme.Ink, fontSize = 12.sp)
 
         Spacer(Modifier.height(16.dp))
         OverlayCoachSection()
@@ -343,3 +343,4 @@ private fun ProfessionalCorrectionPanel() {
         Text(CorrectionText.beforeAfterLine(session), color = WindowTheme.AmberDim, fontSize = 12.sp)
     }
 }
+

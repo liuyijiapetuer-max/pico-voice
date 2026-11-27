@@ -70,6 +70,7 @@ data class OverlayScene(
     val placementNote: String = EvaluationPolicy.UNANCHORED_PLACEMENT,
     val sourceBanner: String,
     val scopeLine: String,
+    val currentTake: PerformanceTake? = null,
 ) {
     val selected: OverlayMember? get() = selectedId?.let { id -> members.firstOrNull { it.id == id } }
 }
@@ -195,6 +196,7 @@ object SpatialOverlay {
             widthMeters = widthMeters,
             sourceBanner = EvaluationPolicy.sourceBanner(resolvedSource),
             scopeLine = EvaluationPolicy.scopeLine(resolvedSource),
+            currentTake = current?.take,
         )
     }
 
@@ -331,19 +333,42 @@ object SpatialOverlay {
         renditionId: String? = null,
     ): OverlayAuditionPlan {
         val ev = member.event
-        val hz = ev?.pitchHz
-        val duration = ev?.durationMs?.coerceAtLeast(80L)
-        if (hz == null || duration == null) {
+        if (scene.source == InputSource.MIDI_EVENTS) {
             return OverlayAuditionPlan(
                 available = false,
                 side = OverlayAuditionSide.PERFORMANCE,
-                reason = "没有保留该音的实际音频切片。用户导入的 WAV 当前只保存分析结果，只能试听参考；内置示范可按分析音高合成对照片段，但仍是预录，不是实时。",
-                prerecorded = prerecorded,
-                banner = banner,
+                reason = "MIDI 事件没有声学录音，不能用合成音色冒充实际演奏。可试听参考音符。",
+                prerecorded = false,
+                banner = EvaluationPolicy.MIDI_BANNER,
             )
         }
-        val knownRendition = renditionId
-        if (scene.source == InputSource.USER_WAV_FILE && knownRendition == null) {
+        val original = scene.currentTake?.audio
+        val startMs = member.auditionStartMs ?: ev?.startMs
+        val endMs = member.auditionEndMs ?: ev?.endMs
+        if (original != null && startMs != null && endMs != null) {
+            val kind = when (scene.source) {
+                InputSource.USER_WAV_FILE -> "用户导入原音频切片"
+                InputSource.MICROPHONE_MONO -> "麦克风单音原音频切片"
+                InputSource.FILE_SYNTHETIC -> "原音频切片"
+                InputSource.MIDI_EVENTS -> "原音频切片"
+            }
+            val clip = original.sliceWindow(
+                startMs = startMs,
+                endMs = endMs,
+                label = "实际试听 ${ev?.noteName ?: "—"}（$kind，${banner}）",
+                sourceName = original.sourceName,
+            )
+            if (clip != null) {
+                return OverlayAuditionPlan(
+                    available = true,
+                    side = OverlayAuditionSide.PERFORMANCE,
+                    clip = clip,
+                    prerecorded = prerecorded,
+                    banner = banner,
+                )
+            }
+        }
+        if (scene.source == InputSource.USER_WAV_FILE && renditionId == null) {
             return OverlayAuditionPlan(
                 available = false,
                 side = OverlayAuditionSide.PERFORMANCE,
@@ -352,13 +377,24 @@ object SpatialOverlay {
                 banner = EvaluationPolicy.PRERECORDED_BANNER,
             )
         }
-        if (scene.source == InputSource.MIDI_EVENTS) {
+        if (scene.source == InputSource.MICROPHONE_MONO) {
             return OverlayAuditionPlan(
                 available = false,
                 side = OverlayAuditionSide.PERFORMANCE,
-                reason = "MIDI 事件没有声学录音，不能用合成音色冒充实际演奏。可试听参考音符。",
+                reason = "这次麦克风采集没有保留原音频切片，无法试听实际演奏，仅可试听参考。未改用合成音色冒充实际录音。",
                 prerecorded = false,
-                banner = EvaluationPolicy.MIDI_BANNER,
+                banner = banner,
+            )
+        }
+        val hz = ev?.pitchHz
+        val duration = ev?.durationMs?.coerceAtLeast(80L)
+        if (hz == null || duration == null) {
+            return OverlayAuditionPlan(
+                available = false,
+                side = OverlayAuditionSide.PERFORMANCE,
+                reason = "没有保留该音的实际音频切片。用户导入的 WAV 若未带原切片，只能试听参考；内置示范可按分析音高合成对照片段，但仍是预录，不是实时。",
+                prerecorded = prerecorded,
+                banner = banner,
             )
         }
         val notes = listOf(
@@ -567,3 +603,4 @@ object SpatialOverlay {
 
     private fun signedMs(ms: Long): String = if (ms > 0) "+${ms}ms" else "${ms}ms"
 }
+

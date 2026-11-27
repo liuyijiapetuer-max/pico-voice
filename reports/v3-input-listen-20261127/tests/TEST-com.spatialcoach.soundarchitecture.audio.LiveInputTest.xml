@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.spatialcoach.soundarchitecture.audio.LiveInputTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-27T01:33:24.026Z" hostname="SPACE" time="0.436">
+  <properties/>
+  <testcase name="emptyMicrophonePcmFailsHonestly" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.009"/>
+  <testcase name="midiNotesKeepTimingAndDoNotPublishAcousticCents" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.004"/>
+  <testcase name="midiRunningStatusAndNoteOnVelocityZeroAreNoteOff" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.0"/>
+  <testcase name="coordinatorCompletesMidiTakeAndRefusesASecondStartUntilStopped" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.005"/>
+  <testcase name="microphonePcmKeepsOriginalAudioAndMayPublishCents" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.27"/>
+  <testcase name="midiOverlappingNotesAreFlattenedMonophonicallyAndLeadingSilenceIsKept" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.0"/>
+  <testcase name="emptyMidiOrUnconfirmedReferenceFailsWithoutFallbackTake" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.001"/>
+  <testcase name="coordinatorRejectsMissingPermissionAndDeviceWithoutFakeTake" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.0"/>
+  <testcase name="userWavImportKeepsOriginalWaveformForActualAudition" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.006"/>
+  <testcase name="importedOfficialWavBytesRetainFullOriginalAudio" classname="com.spatialcoach.soundarchitecture.audio.LiveInputTest" time="0.14"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

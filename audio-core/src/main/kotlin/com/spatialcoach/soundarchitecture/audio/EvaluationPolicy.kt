@@ -12,13 +12,23 @@ object EvaluationPolicy {
     const val MIDI_SCOPE =
         "MIDI 只核对准键音符及时间，不评价声学音准，也不发布音分作为音准结论。"
     const val MIC_SCOPE =
-        "麦克风单音模式才评价声学音准。当前默认启动链路未接入真麦，不能写成已在头显上验证的实时拾音。"
+        "麦克风单音模式才评价声学音准。默认启动仍是文件回放；用户可手动开始 Android AudioRecord 单音采集。这是软件接线，不能写成已在头显上验证的实时拾音。"
     const val FILE_SCOPE =
         "录音或合成文件可以分析音准与节奏，但必须标明这是预录/文件回放，不是实时采集。"
     const val PERMISSION_DENIED =
         "录音权限未授予，无法开始麦克风单音采集。未改写已有导入，也没有改用未标明的预录冒充实时。"
     const val DEVICE_MISSING =
-        "未检测到可用的 MIDI 设备或麦克风。请检查连接后重试，或改用已确认的文件导入。"
+        "未检测到可用的 MIDI 设备或麦克风。请检查连接后重试，或改用已确认的文件导入。未改用未标明的预录冒充实时。"
+    const val SOFTWARE_WIRING_NOTE =
+        "这是应用内的软件接线（Android AudioRecord / 标准 MIDI），不是已完成的头显验收或设备兼容结论。"
+    const val LIVE_CAPTURE_NOT_USER_SLOT =
+        "实时采集不会写入用户第一遍/重奏导入槽，也不接入专业修音。"
+    const val MIDI_NO_NOTES =
+        "未采集到 MIDI 音符。未改用未标明的预录冒充实时。"
+    const val MIC_NO_AUDIO =
+        "未采集到可用的麦克风音频。未改用未标明的预录冒充实时。"
+    const val CAPTURE_BUSY = "已有采集在进行，请先停止再开始新的采集。"
+    const val CAPTURE_CANCELLED = "采集已取消或被打断。未写入导入槽，也没有改用未标明的预录冒充实时。"
     const val IMPORT_FAILED_PREFIX = "导入失败："
     const val LOW_CONFIDENCE_HINT =
         "该音置信度过低，构件改为虚线，并标记为「未知」，不发布确定音分。"
@@ -80,3 +90,4 @@ object EvaluationPolicy {
     fun importFailureMessage(reason: String): String =
         "$IMPORT_FAILED_PREFIX$reason 未改写已有的第一遍或重奏，也没有回退到合成示范，更不会把预录标成实时。"
 }
+
